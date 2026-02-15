@@ -2,22 +2,22 @@
 * FILE            : ProtocolCommands.cs
 * PROJECT         : A02TCPIP
 * PROGRAMMER      : Tuan Thanh Nguyen
-* FIRST VERSION   : 2026-02-13
+* FIRST VERSION   : 2026-02-14
 * DESCRIPTION     :
-*   Client-side protocol command names used in request/response messages.
+*   Client-side protocol command names
 */
 
 namespace WordGameClient.Protocol
 {
     public static class ProtocolCommands
     {
-        public const string LoginInfo = "LOGIN_INFO";
-        public const string WordValidation = "WORD_VALIDATION";
-        public const string TimeLeft = "TIME_LEFT";
-        public const string ChoicesLeft = "CHOICES_LEFT";
-        public const string CheckEndGame = "CHECK_END_GAME";
-        public const string CheckNewGame = "CHECK_NEW_GAME";
-        public const string CheckNewPlayer = "CHECK_NEW_PLAYER";
-        public const string GetStringFromServer = "GET_STRING_FROM_SERVER";
+        public const string LoginInfo = "login_info";
+        public const string WordValidation = "word_validation";
+        public const string TimeLeft = "time_left";
+        public const string ChoicesLeft = "choices_left";
+        public const string CheckEndGame = "check_end_game";
+        public const string CheckNewGame = "check_new_game";
+        public const string CheckForNewPlayer = "check_for_new_player";
+        public const string GetStringFromServer = "get_string_from_server";
     }
 }
