@@ -2,36 +2,22 @@
 * FILE            : RelayCommand.cs
 * PROJECT         : A02TCPIP
 * PROGRAMMER      : Tuan Thanh Nguyen
-* FIRST VERSION   : 2026-02-12
+* FIRST VERSION   : 2026-02-15
 * DESCRIPTION     :
-*   Basic ICommand implementation for WPF button bindings.
+*   ICommand implementation for WPF bindings.
 */
 
 using System;
 using System.Windows.Input;
 
-namespace WordGameClient.Utils
+namespace WordGameClient.Commands
 {
     public sealed class RelayCommand : ICommand
     {
         private readonly Action executeAction;
         private readonly Func<bool>? canExecuteFunc;
 
-        public event EventHandler? CanExecuteChanged
-        {
-            add
-            {
-                CommandManager.RequerySuggested += value;
-
-                return;
-            }
-            remove
-            {
-                CommandManager.RequerySuggested -= value;
-
-                return;
-            }
-        }
+        public event EventHandler? CanExecuteChanged;
 
         public RelayCommand(Action executeAction, Func<bool>? canExecuteFunc)
         {
@@ -57,12 +43,19 @@ namespace WordGameClient.Utils
         {
             this.executeAction.Invoke();
 
+            this.RaiseCanExecuteChanged();
+
             return;
         }
 
         public void RaiseCanExecuteChanged()
         {
-            CommandManager.InvalidateRequerySuggested();
+            EventHandler? handler = this.CanExecuteChanged;
+
+            if (handler != null)
+            {
+                handler(this, EventArgs.Empty);
+            }
 
             return;
         }
