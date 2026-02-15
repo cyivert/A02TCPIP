@@ -68,12 +68,10 @@ namespace WordGameClient
 
         private void AboutMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            string message = "Word Game Client\n"
-                           + "Version 1.0\n\n"
-                           + "A02TCPIP Project\n"
-                           + "Programmer: Cy, Thanh, Ritik";
+            AboutWindow aboutWindow = new AboutWindow();
 
-            MessageBox.Show(message, "About Word Game", MessageBoxButton.OK, MessageBoxImage.Information);
+            aboutWindow.Owner = this;
+            aboutWindow.ShowDialog();
 
             return;
         }
