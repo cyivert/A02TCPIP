@@ -15,7 +15,7 @@ namespace WordGameServer.Utils
     public static class GameConstants
     {
         // Network Configuration
-        public const string DefaultServerIP = "127.0.0.1";                        // Default IP address for the game server to bind to, allowing it to accept connections on all available network interfaces.
+        public const string DefaultServerIP = "127.0.0.1";                      // Default IP address for the game server to bind to, allowing it to accept connections on all available network interfaces.
         public const int DefaultServerPort = 5000;                              // Default port number for the game server to listen on.
         public const int MinPortNumber = 1;                                     // Minimum valid port number for the game server to listen on.
         public const int MaxPortNumber = 65535;                                 // Maximum valid port number for the game server to listen on.

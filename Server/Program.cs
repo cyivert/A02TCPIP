@@ -30,7 +30,8 @@ namespace WordGameServer
     //
     class Program
     {
-        private static CancellationTokenSource? cancellationTokenSource;                             // CancellationTokenSource to manage graceful shutdown of the server and its components.
+        // CancellationTokenSource to manage graceful shutdown of the server and its components.
+        private static CancellationTokenSource? cancellationTokenSource;
         static async Task Main(string[] args)
         {
             Console.Title = "Word Game Server";
@@ -39,6 +40,7 @@ namespace WordGameServer
             Console.WriteLine("=================================");
             Console.WriteLine();
 
+            // Initialize variables for server, logger, and configuration values.
             GameServer? server = null;
             Logger? logger = null;
             IPAddress? serverIP = null;
@@ -46,8 +48,10 @@ namespace WordGameServer
             string? ipValue = string.Empty;
             string? portValue = string.Empty;
 
+            // Initialize the cancellation token source for managing shutdown signals.
             cancellationTokenSource = new CancellationTokenSource();
 
+            // Main execution block wrapped in a try-catch to handle any unexpected exceptions and ensure proper logging and resource cleanup.
             try
             {
                 logger = new Logger();
@@ -111,6 +115,7 @@ namespace WordGameServer
                     await server.StopAsync();
                 }
 
+                logger?.Dispose();
                 cancellationTokenSource?.Dispose();
             }
 
