@@ -40,12 +40,13 @@ namespace WordGameClient.Models
 
             if (string.IsNullOrWhiteSpace(serverIpValue) == true)
             {
-                errorMessage = "Missing App.config appSetting: 'serverIp'.";
+                errorMessage = $"Missing App.config appSetting: '{ConfigKeys.ServerIp}'.";
             }
             else if (string.IsNullOrWhiteSpace(serverPortValue) == true)
             {
-                errorMessage = "Missing App.config appSetting: 'serverPort'.";
+                errorMessage = $"Missing App.config appSetting: '{ConfigKeys.ServerPort}'.";
             }
+
             else if (int.TryParse(serverPortValue, out parsedPort) == false)
             {
                 errorMessage = "Invalid App.config appSetting: 'serverPort' must be an integer.";
