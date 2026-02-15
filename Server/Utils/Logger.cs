@@ -57,7 +57,7 @@ namespace WordGameServer.Utils
         // FUNCTION : LogMessage
         // DESCRIPTION : Logs a message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
         // PARAMETERS : 
-        // string message - The message to be logged to the console. The message will be prefixed with a timestamp in the format [yyyy-MM-dd HH:mm:ss].
+        // string message - The message will be prefixed with a timestamp in the format [yyyy-MM-dd HH:mm:ss].
         // RETURNS : n/a
         //
         public void LogMessage(string message)
@@ -77,6 +77,117 @@ namespace WordGameServer.Utils
                     timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     formattedMessage = $"[{timestamp}] {message}";
                     Console.WriteLine(formattedMessage);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Logger error: {ex.Message}");
+            }
+
+            return;
+        }
+
+        //
+        // FUNCTION : LogError
+        // DESCRIPTION :
+        // Logs an error message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
+        // Error messages are displayed in red text to differentiate them from regular log messages.
+        // PARAMETERS : 
+        // string message - Error messages typically indicate issues or problems that have occurred within the application and may require attention or troubleshooting.
+        // RETURNS :
+        //
+        public void LogError(string message)
+        {
+            string timestamp = string.Empty;
+            string formattedMessage = string.Empty;
+            ConsoleColor originalColor = Console.ForegroundColor;
+
+            try
+            {
+                lock (this.consoleLock)
+                {
+                    timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    formattedMessage = $"[{timestamp}] ERROR: {message}";
+
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(formattedMessage);
+                    Console.ForegroundColor = originalColor;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Logger error: {ex.Message}");
+            }
+
+            return;
+        }
+
+        //
+        // FUNCTION : LogWarning
+        // DESCRIPTION : Logs a warning message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
+        // PARAMETERS : 
+        // string message - Warning messages typically indicate potential issues or situations that may require attention but do not necessarily indicate an error or problem.
+        // RETURNS :
+        //
+        public void LogWarning(string message)
+        {
+            string timestamp = string.Empty;
+            string formattedMessage = string.Empty;
+            ConsoleColor originalColor = Console.ForegroundColor;
+
+            if (this.isShuttingDown)
+            {
+                return;
+            }
+
+            try
+            {
+                lock (this.consoleLock)
+                {
+                    timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    formattedMessage = $"[{timestamp}] WARNING: {message}";
+
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine(formattedMessage);
+                    Console.ForegroundColor = originalColor;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Logger error: {ex.Message}");
+            }
+
+            return;
+        }
+
+        //
+        // FUNCTION : LogDebug
+        // DESCRIPTION : Logs a debug message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
+        // PARAMETERS : 
+        // string message - Debug messages are typically used for development and troubleshooting purposes and may include detailed information about the application's state or behavior.
+        // RETURNS :
+        //
+        public void LogDebug(string message)
+        {
+            string timestamp = string.Empty;
+            string formattedMessage = string.Empty;
+            ConsoleColor originalColor = Console.ForegroundColor;
+
+            if (this.isShuttingDown)
+            {
+                return;
+            }
+
+            try
+            {
+                lock (this.consoleLock)
+                {
+                    timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    formattedMessage = $"[{timestamp}] DEBUG: {message}";
+
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.WriteLine(formattedMessage);
+                    Console.ForegroundColor = originalColor;
                 }
             }
             catch (Exception ex)
