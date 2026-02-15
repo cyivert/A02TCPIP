@@ -4,7 +4,7 @@
 * PROGRAMMER      : Tuan Thanh Nguyen
 * FIRST VERSION   : 2026-02-15
 * DESCRIPTION     :
-*   Async ICommand for WPF. Prevents UI freeze and double-click spam.
+*   Async ICommand implementation for WPF bindings.
 */
 
 using System;
@@ -20,7 +20,11 @@ namespace WordGameClient.Commands
 
         private bool isRunning;
 
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         public AsyncRelayCommand(Func<Task> executeFunc, Func<bool>? canExecuteFunc)
         {
@@ -51,7 +55,7 @@ namespace WordGameClient.Commands
         public async void Execute(object? parameter)
         {
             this.isRunning = true;
-            this.RaiseCanExecuteChanged();
+            CommandManager.InvalidateRequerySuggested();
 
             try
             {
@@ -60,19 +64,7 @@ namespace WordGameClient.Commands
             finally
             {
                 this.isRunning = false;
-                this.RaiseCanExecuteChanged();
-            }
-
-            return;
-        }
-
-        public void RaiseCanExecuteChanged()
-        {
-            EventHandler? handler = this.CanExecuteChanged;
-
-            if (handler != null)
-            {
-                handler(this, EventArgs.Empty);
+                CommandManager.InvalidateRequerySuggested();
             }
 
             return;

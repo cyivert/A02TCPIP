@@ -17,7 +17,11 @@ namespace WordGameClient.Commands
         private readonly Action executeAction;
         private readonly Func<bool>? canExecuteFunc;
 
-        public event EventHandler? CanExecuteChanged;
+        public event EventHandler? CanExecuteChanged
+        {
+            add { CommandManager.RequerySuggested += value; }
+            remove { CommandManager.RequerySuggested -= value; }
+        }
 
         public RelayCommand(Action executeAction, Func<bool>? canExecuteFunc)
         {
@@ -43,19 +47,7 @@ namespace WordGameClient.Commands
         {
             this.executeAction.Invoke();
 
-            this.RaiseCanExecuteChanged();
-
-            return;
-        }
-
-        public void RaiseCanExecuteChanged()
-        {
-            EventHandler? handler = this.CanExecuteChanged;
-
-            if (handler != null)
-            {
-                handler(this, EventArgs.Empty);
-            }
+            CommandManager.InvalidateRequerySuggested();
 
             return;
         }

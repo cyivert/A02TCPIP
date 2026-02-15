@@ -6,89 +6,108 @@
         xmlns:local="clr-namespace:WordGameClient"
         mc:Ignorable="d"
         Title="Word Game Client" Height="640" Width="980">
-    <Grid Margin="16">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <DockPanel>
+        <!-- Navigation Bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="_New Game" Command="{Binding StartGameCommand}"/>
+                <Separator/>
+                <MenuItem Header="E_xit" Click="ExitMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Settings">
+                <MenuItem Header="_User Settings" Click="UserSettingsMenuItem_Click"/>
+                <MenuItem Header="_Connection" Click="ConnectionMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="_About">
+                <MenuItem Header="_About Word Game" Click="AboutMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
 
-        <Border Grid.Row="0" Padding="12" BorderThickness="1" CornerRadius="8">
-            <StackPanel>
-                <TextBlock FontWeight="SemiBold" Text="{Binding ServerEndpointLabel}"/>
-                <TextBlock Foreground="DarkRed"
-                           Visibility="{Binding ConfigurationErrorVisibility}"
-                           Text="{Binding ConfigurationErrorMessage}"/>
-            </StackPanel>
-        </Border>
+        <!-- Main Content -->
+        <Grid Margin="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <GroupBox Grid.Row="1" Header="Game" Padding="12" Margin="0,12,0,0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <Border Grid.Row="0" Padding="12" BorderThickness="1" CornerRadius="8">
+                <StackPanel>
+                    <TextBlock FontWeight="SemiBold" Text="{Binding ServerEndpointLabel}"/>
+                    <TextBlock Foreground="DarkRed"
+                               Visibility="{Binding ConfigurationErrorVisibility}"
+                               Text="{Binding ConfigurationErrorMessage}"/>
+                </StackPanel>
+            </Border>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Player Name:" FontWeight="SemiBold"/>
-                    <TextBox Margin="0,6,0,12" Text="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}"/>
+            <GroupBox Grid.Row="1" Header="Game" Padding="12" Margin="0,12,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-                    <Button Height="32" Width="160" Content="Start Game"
-                            Command="{Binding StartGameCommand}"/>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Player Name:" FontWeight="SemiBold"/>
+                        <TextBox Margin="0,6,0,12" Text="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}"/>
 
-                    <Separator Margin="0,12,0,12"/>
+                        <Button Height="32" Width="160" Content="Start Game"
+                                Command="{Binding StartGameCommand}"/>
 
-                    <TextBlock Text="Puzzle String:" FontWeight="SemiBold"/>
-                    <TextBlock Margin="0,6,0,12"
-                               FontFamily="Consolas"
-                               FontSize="20"
-                               TextWrapping="Wrap"
-                               Text="{Binding PuzzleString}"/>
+                        <Separator Margin="0,12,0,12"/>
 
-                    <TextBlock Text="Guess Word:" FontWeight="SemiBold"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBox Width="260" Text="{Binding GuessWord, UpdateSourceTrigger=PropertyChanged}"/>
-                        <Button Width="140" Margin="10,0,0,0" Content="Submit Guess"
-                                Command="{Binding SubmitGuessCommand}"/>
+                        <TextBlock Text="Puzzle String:" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,6,0,12"
+                                   FontFamily="Consolas"
+                                   FontSize="20"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding PuzzleString}"/>
+
+                        <TextBlock Text="Guess Word:" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBox Width="260" Text="{Binding GuessWord, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Width="140" Margin="10,0,0,0" Content="Submit Guess"
+                                    Command="{Binding SubmitGuessCommand}"/>
+                        </StackPanel>
+
+                        <TextBlock Margin="0,12,0,0" FontWeight="SemiBold" Text="{Binding FeedbackMessage}"/>
                     </StackPanel>
 
-                    <TextBlock Margin="0,12,0,0" FontWeight="SemiBold" Text="{Binding FeedbackMessage}"/>
-                </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="18,0,0,0">
+                        <TextBlock Text="Time Left (sec):" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding TimeLeftSeconds}"/>
 
-                <StackPanel Grid.Column="1" Margin="18,0,0,0">
-                    <TextBlock Text="Time Left (sec):" FontWeight="SemiBold"/>
-                    <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding TimeLeftSeconds}"/>
+                        <TextBlock Text="Choices Left:" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding ChoicesLeft}"/>
 
-                    <TextBlock Text="Choices Left:" FontWeight="SemiBold"/>
-                    <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding ChoicesLeft}"/>
+                        <Button Height="30" Margin="0,0,0,8" Content="Refresh Time"
+                                Command="{Binding RefreshTimeLeftCommand}"/>
+                        <Button Height="30" Margin="0,0,0,8" Content="Refresh Choices"
+                                Command="{Binding RefreshChoicesLeftCommand}"/>
+                        <Button Height="30" Margin="0,0,0,8" Content="Check End Game"
+                                Command="{Binding CheckEndGameCommand}"/>
 
-                    <Button Height="30" Margin="0,0,0,8" Content="Refresh Time"
-                            Command="{Binding RefreshTimeLeftCommand}"/>
-                    <Button Height="30" Margin="0,0,0,8" Content="Refresh Choices"
-                            Command="{Binding RefreshChoicesLeftCommand}"/>
-                    <Button Height="30" Margin="0,0,0,8" Content="Check End Game"
-                            Command="{Binding CheckEndGameCommand}"/>
+                        <Separator Margin="0,12,0,12"/>
 
-                    <Separator Margin="0,12,0,12"/>
+                        <TextBlock Text="Play Again?" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Width="80" Margin="0,0,10,0" Content="YES"
+                                    Command="{Binding PlayAgainYesCommand}"/>
+                            <Button Width="80" Content="NO"
+                                    Command="{Binding PlayAgainNoCommand}"/>
+                        </StackPanel>
 
-                    <TextBlock Text="Play Again?" FontWeight="SemiBold"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <Button Width="80" Margin="0,0,10,0" Content="YES"
-                                Command="{Binding PlayAgainYesCommand}"/>
-                        <Button Width="80" Content="NO"
-                                Command="{Binding PlayAgainNoCommand}"/>
+                        <Separator Margin="0,12,0,12"/>
+
+                        <TextBlock Text="Found Words:" FontWeight="SemiBold"/>
+                        <ListBox Height="180" ItemsSource="{Binding FoundWords}"/>
                     </StackPanel>
+                </Grid>
+            </GroupBox>
 
-                    <Separator Margin="0,12,0,12"/>
-
-                    <TextBlock Text="Found Words:" FontWeight="SemiBold"/>
-                    <ListBox Height="180" ItemsSource="{Binding FoundWords}"/>
-                </StackPanel>
-            </Grid>
-        </GroupBox>
-
-        <GroupBox Grid.Row="2" Header="Client Log" Padding="12" Margin="0,12,0,0">
-            <ListBox ItemsSource="{Binding LogMessages}" />
-        </GroupBox>
-    </Grid>
+            <GroupBox Grid.Row="2" Header="Client Log" Padding="12" Margin="0,12,0,0">
+                <ListBox ItemsSource="{Binding LogMessages}" />
+            </GroupBox>
+        </Grid>
+    </DockPanel>
 </Window>
