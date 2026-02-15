@@ -3,7 +3,7 @@
 * PROJECT : A02 TCPIP
 * PROGRAMMER : Cy Iver Torrefranca
 * DESCRIPTION :
-* The functions in this file are used to ...
+* Loads and validates game data files with comprehensive error logging.
 */
 
 using System;
@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Data
 {
-    internal class GameData
+    public static class GameData
     {
     }
 }
