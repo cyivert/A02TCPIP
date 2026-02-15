@@ -10,16 +10,16 @@
 using System;
 using System.Configuration;
 using System.Threading.Tasks;
-using WordGameServer.Config;
 using WordGameServer.Data;
 using WordGameServer.Network;
+using WordGameServer.Utils;
 
 namespace WordGameServer
 {
 
-    internal static class Program
+    class Program
     {
-     
+    
         public static int Main(string[] args)
         {
             int exitCode = 0;
