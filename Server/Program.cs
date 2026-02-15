@@ -36,7 +36,7 @@ namespace WordGameServer
         {
             Console.Title = "Word Game Server";
             Console.WriteLine("=================================");
-            Console.WriteLine("   WORD GAME SERVER - A02");
+            Console.WriteLine("   WORD GAME SERVER  ");
             Console.WriteLine("=================================");
             Console.WriteLine();
 
