@@ -5,8 +5,80 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WordGameClient"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Word Guess Client" Height="520" Width="900">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="12" BorderThickness="1" CornerRadius="8">
+            <StackPanel>
+                <TextBlock FontSize="14" FontWeight="SemiBold"
+                           Text="{Binding ServerEndpointLabel}" />
+                <TextBlock Foreground="DarkRed"
+                           Visibility="{Binding ConfigurationErrorVisibility}"
+                           Text="{Binding ConfigurationErrorMessage}" />
+            </StackPanel>
+        </Border>
+
+        <!-- Main -->
+        <Grid Grid.Row="1" Margin="0,12,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <GroupBox Grid.Column="0" Header="Game" Margin="0,0,12,0">
+                <StackPanel Margin="12">
+                    <TextBlock Text="Puzzle String:" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding PuzzleString}"
+                               FontSize="20"
+                               FontFamily="Consolas"
+                               TextWrapping="Wrap"
+                               Margin="0,6,0,12"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Width="240"
+                                 Text="{Binding GuessWord, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Submit"
+                                Width="100"
+                                Margin="8,0,0,0"
+                                Command="{Binding SubmitGuessCommand}"/>
+                    </StackPanel>
+
+                    <TextBlock Margin="0,10,0,0"
+                               Text="{Binding FeedbackMessage}" />
+                </StackPanel>
+            </GroupBox>
+
+            <GroupBox Grid.Column="1" Header="Status">
+                <StackPanel Margin="12">
+                    <TextBlock Text="Player Name:" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <Button Content="Start Game"
+                            Margin="0,8,0,0"
+                            Command="{Binding StartGameCommand}" />
+
+                    <Separator Margin="0,12,0,12"/>
+
+                    <TextBlock Text="Found Words:" FontWeight="SemiBold"/>
+                    <ListBox ItemsSource="{Binding FoundWords}" Height="260"/>
+
+                    <Separator Margin="0,12,0,12"/>
+
+                    <Button Content="New Game"
+                            Command="{Binding NewGameCommand}" />
+                </StackPanel>
+            </GroupBox>
+        </Grid>
+
+        <!-- Footer -->
+        <TextBlock Grid.Row="2" HorizontalAlignment="Right" Opacity="0.7"
+                   Text="Frontend scaffold only (TCP wiring comes next)." />
     </Grid>
 </Window>
