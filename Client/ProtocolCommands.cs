@@ -1,8 +1,8 @@
 ﻿/*
 * FILE            : ProtocolCommands.cs(Client)
 * PROJECT         : A02TCPIP
-* PROGRAMMER      :
-* FIRST VERSION   : 2026-02-15
+* PROGRAMMER      : Tuan Thanh Nguyen
+* FIRST VERSION   : 2026-02-12
 * DESCRIPTION     :
 *   Client-side protocol command names.
 */
