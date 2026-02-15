@@ -14,6 +14,12 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
+    //
+    // CLASS : ConfigKeys
+    // DESCRIPTION : This static class defines constant string keys for accessing configuration values from the App.config file.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public static class ConfigKeys
     {
         public const string ServerPort = "ServerPort";

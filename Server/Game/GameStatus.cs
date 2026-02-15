@@ -16,7 +16,7 @@ namespace WordGameServer.Game
 {
 
     //
-    // FUNCTION : GameStatus
+    // ENUM : GameStatus
     // DESCRIPTION : Enum for tracking game session status.
     // PARAMETERS : n/a
     // RETURNS : n/a

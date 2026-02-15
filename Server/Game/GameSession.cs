@@ -3,7 +3,7 @@
 * PROJECT : A02 TCPIP
 * PROGRAMMER : Cy Iver Torrefranca
 * DESCRIPTION :
-* The functions in this file are used to ...
+* Manages the state of a single game session with thread-safe operations.
 */
 
 using System;
@@ -14,7 +14,16 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Game
 {
-    internal class GameSession
+    //
+    // FUNCTION : GameSession
+    // DESCRIPTION :
+    // PARAMETERS : 
+    // RETURNS :
+    //
+    public class GameSession
     {
+        public static readonly int GameDurationSeconds;
+        private static readonly int BasePointsPerWord;
+        private static readonly int TimeBonusMultiplier;
     }
 }

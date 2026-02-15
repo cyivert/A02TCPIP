@@ -19,13 +19,22 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
+
+    //
+    // CLASS : Logger
+    // DESCRIPTION : This class provides a thread-safe logging utility for console output with timestamps.
+    // It includes methods for logging regular messages, warnings, errors, and debug information, each with appropriate formatting and color coding to differentiate message types.
+    // The logger also supports a shutdown signal to prevent new log messages from being processed after shutdown has been initiated.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public class Logger
     {
         private readonly object consoleLock;                                // Lock object to synchronize console access and ensure thread safety when logging messages.
         private volatile bool isShuttingDown;                               // Flag to indicate whether the logger is shutting down. This prevents new log messages from being processed after shutdown has been initiated.
 
         //
-        // FUNCTION : Logger
+        // CONSTRUCTOR : Logger
         // DESCRIPTION : This constructor initializes the Logger instance and sets up necessary synchronization primitives.
         // PARAMETERS : n/a
         // RETURNS : n/a
@@ -39,7 +48,7 @@ namespace WordGameServer.Utils
         }
 
         //
-        // FUNCTION : SignalShutdown
+        // METHOD : SignalShutdown
         // DESCRIPTION :
         // Signals the logger that the application is shutting down, preventing further log messages from being processed.
         // This method should be called during application shutdown to ensure that no new log messages are written to the console after shutdown has been initiated.
@@ -54,7 +63,7 @@ namespace WordGameServer.Utils
         }
 
         //
-        // FUNCTION : LogMessage
+        // METHOD : LogMessage
         // DESCRIPTION : Logs a message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
         // PARAMETERS : 
         // string message - The message will be prefixed with a timestamp in the format [yyyy-MM-dd HH:mm:ss].
@@ -88,7 +97,7 @@ namespace WordGameServer.Utils
         }
 
         //
-        // FUNCTION : LogError
+        // METHOD : LogError
         // DESCRIPTION :
         // Logs an error message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
         // Error messages are displayed in red text to differentiate them from regular log messages.
@@ -123,7 +132,7 @@ namespace WordGameServer.Utils
         }
 
         //
-        // FUNCTION : LogWarning
+        // METHOD : LogWarning
         // DESCRIPTION : Logs a warning message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
         // PARAMETERS : 
         // string message - Warning messages typically indicate potential issues or situations that may require attention but do not necessarily indicate an error or problem.
@@ -161,7 +170,7 @@ namespace WordGameServer.Utils
         }
 
         //
-        // FUNCTION : LogDebug
+        // METHOD : LogDebug
         // DESCRIPTION : Logs a debug message to the console with a timestamp. This method is thread-safe and will not log messages if the logger has been signaled to shut down.
         // PARAMETERS : 
         // string message - Debug messages are typically used for development and troubleshooting purposes and may include detailed information about the application's state or behavior.

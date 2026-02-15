@@ -14,6 +14,13 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
+    //
+    // CLASS : ProtocolCommands
+    // DESCRIPTION :
+    // This static class defines constant string values for protocol commands used in client-server communication for the word game.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public static class ProtocolCommands
     {
         // Client to Server Commands
