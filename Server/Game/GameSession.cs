@@ -19,9 +19,9 @@ namespace WordGameServer.Game
 {
     //
     // FUNCTION : GameSession
-    // DESCRIPTION :
-    // PARAMETERS : 
-    // RETURNS :
+    // DESCRIPTION : This class manages the state of a single game session, including tracking found words, guess count, and game status.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
     //
     public class GameSession
     {

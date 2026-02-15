@@ -22,7 +22,6 @@ namespace WordGameServer.Data
     // PARAMETERS : 
     // RETURNS :
     //
-
     public class GameData
     {
         private readonly string puzzleString;

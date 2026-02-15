@@ -24,8 +24,8 @@ namespace WordGameServer.Network
     // This class is responsible for managing the communication with a single client.
     // It processes incoming requests, manages the game state for that client, and sends appropriate responses back to the client.
     // The class ensures a strict request/response pattern and handles various commands such as starting a game, making guesses, checking progress, and quitting.
-    // PARAMETERS : 
-    // RETURNS :
+    // PARAMETERS : n/a
+    // RETURNS : n/a
     //
     public class ClientHandler
     {

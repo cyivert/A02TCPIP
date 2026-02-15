@@ -22,8 +22,8 @@ namespace WordGameServer.Data
     // This static class is responsible for loading and validating game data files from a specified directory.
     // It provides methods to validate the files, load valid game data into memory, and retrieve a random game for gameplay.
     // The loader ensures that all game data files adhere to the required format and logs any errors encountered during the loading process for easier debugging and maintenance.
-    // PARAMETERS : 
-    // RETURNS :
+    // PARAMETERS : n/a
+    // RETURNS : n/a
     //
     public static class GameDataLoader
     {
@@ -37,8 +37,8 @@ namespace WordGameServer.Data
         // DESCRIPTION : This static constructor initializes the GameDataLoader class by reading the
         // game data directory from the application configuration and setting up the list to hold loaded game data.
         // It ensures that the loader is ready to validate and load game files when requested.
-        // PARAMETERS : 
-        // RETURNS :
+        // PARAMETERS : n/a
+        // RETURNS : n/a
         //
         static GameDataLoader()
         {

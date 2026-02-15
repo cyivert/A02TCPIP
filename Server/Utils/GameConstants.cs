@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
+    //
+    // CLASS : GameConstants
+    // DESCRIPTION : Holds the constant values used throughout the game server application.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public static class GameConstants
     {
         // Network Configuration
