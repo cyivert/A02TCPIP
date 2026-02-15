@@ -2,10 +2,9 @@
 * FILE            : App.xaml.cs
 * PROJECT         : A02TCPIP
 * PROGRAMMER      : Tuan Thanh Nguyen
-* FIRST VERSION   : 2026-02-14
+* FIRST VERSION   : 2026-02-15
 * DESCRIPTION     :
-*   Application startup for the Word Game client.
-*   Loads App.config settings and stops the app if configuration is invalid.
+*   WPF application startup. Loads settings from App.config.
 */
 
 using System.Windows;
@@ -13,34 +12,38 @@ using WordGameClient.Models;
 
 namespace WordGameClient
 {
-    /*
-    * CLASS           : App
-    * DESCRIPTION     :
-    *   WPF application entry point. Validates configuration on startup.
-    */
     public partial class App : Application
     {
         public static ClientSettings? Settings { get; private set; }
+        public static string ConfigurationErrorMessage { get; private set; }
+
+        public App()
+        {
+            Settings = null;
+            ConfigurationErrorMessage = string.Empty;
+
+            return;
+        }
 
         protected override void OnStartup(StartupEventArgs e)
         {
+            bool loaded = false;
+            ClientSettings? settings = null;
+            string errorMessage = string.Empty;
+
             base.OnStartup(e);
 
-            bool isLoaded = ClientSettings.TryLoad(out ClientSettings? loadedSettings, out string errorMessage);
+            loaded = ClientSettings.TryLoad(out settings, out errorMessage);
 
-            if ((isLoaded == false) || (loadedSettings == null))
+            if ((loaded == true) && (settings != null))
             {
-                MessageBox.Show(
-                    errorMessage,
-                    "Configuration Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                this.Shutdown();
+                Settings = settings;
+                ConfigurationErrorMessage = string.Empty;
             }
             else
             {
-                Settings = loadedSettings;
+                Settings = null;
+                ConfigurationErrorMessage = errorMessage;
             }
 
             return;
