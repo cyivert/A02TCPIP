@@ -23,12 +23,11 @@ using WordGameServer.Utils;
 namespace WordGameServer
 {
     //
-    // CLASS : 
-    // DESCRIPTION :
-    // PARAMETERS : 
-    // RETURNS :
+    // CLASS : Program
+    // DESCRIPTION : Program class serves as the main entry point for the Word Game Server application
+    // PARAMETERS : n/a
+    // RETURNS : n/a
     //
-
     class Program
     {
         private static CancellationTokenSource? cancellationTokenSource;                             // CancellationTokenSource to manage graceful shutdown of the server and its components.
