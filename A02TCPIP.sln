@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36915.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordGameClient", "Client\WordGameClient.csproj", "{0A8D2ABF-513C-3E16-A0C2-3EC5E10F1536}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordGameClient", "Server\WordGameClient.csproj", "{8E0B45F5-FEAB-4B57-AE09-B1817D552A54}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WordGameServer", "Server\WordGameServer.csproj", "{3FD62796-019A-D590-58AA-33E9E2DE2AF3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
