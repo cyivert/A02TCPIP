@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
-    internal class ConfigKeys
+    public static class ConfigKeys
     {
         public const string ServerPort = "ServerPort";
         public const string GameDataDirectory = "GameDataDirectory";

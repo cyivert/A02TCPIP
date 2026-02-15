@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
-    internal class ProtocolCommands
+    public static class ProtocolCommands
     {
         // Client to Server Commands
         public const string Start = "START";

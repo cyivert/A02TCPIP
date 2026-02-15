@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace WordGameServer.Utils
 {
-    internal class Logger
+    public class Logger
     {
         private readonly object consoleLock;                                // Lock object to synchronize console access and ensure thread safety when logging messages.
         private volatile bool isShuttingDown;                               // Flag to indicate whether the logger is shutting down. This prevents new log messages from being processed after shutdown has been initiated.
