@@ -1,5 +1,5 @@
 ﻿/*
-* FILE : GameData.cs
+* FILE : GameServer.cs
 * PROJECT : A02 TCPIP
 * PROGRAMMER : Cy Iver Torrefranca
 * DESCRIPTION :
@@ -12,9 +12,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WordGameServer
+namespace WordGameServer.Game
 {
-    internal class GameData
+    internal class GameSession
     {
     }
 }
