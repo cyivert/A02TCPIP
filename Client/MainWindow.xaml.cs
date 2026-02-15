@@ -1,33 +1,24 @@
-﻿using System.Text;
+﻿/*
+* FILE            : MainWindow.xaml.cs
+* PROJECT         : A02TCPIP
+* PROGRAMMER      : Tuan Thanh Nguyen
+* FIRST VERSION   : 2026-02-15
+* DESCRIPTION     :
+*   Main window code-behind. Wires MVVM DataContext.
+*/
+
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WordGameClient.ViewModels;
 
 namespace WordGameClient
 {
-    /*
-    * CLASS        : MainWindow
-    * DESCRIPTION  :
-    *   Main WPF window.
-    */
     public partial class MainWindow : Window
     {
-        /*
-        * METHOD       : MainWindow
-        * DESCRIPTION  :
-        *   Initializes the UI components.
-        * PARAMETERS   : NONE
-        * RETURNS      : NONE
-        */
         public MainWindow()
         {
             InitializeComponent();
+
+            this.DataContext = new MainWindowViewModel(App.Settings, App.ConfigurationErrorMessage);
 
             return;
         }
