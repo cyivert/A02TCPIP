@@ -11,6 +11,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using WordGameClient.Models;
+using WordGameClient.Protocol;
 using WordGameClient.Utils;
 
 namespace WordGameClient.ViewModels
