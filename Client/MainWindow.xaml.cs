@@ -9,16 +9,27 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Server
+namespace WordGameClient
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+    /*
+    * CLASS        : MainWindow
+    * DESCRIPTION  :
+    *   Main WPF window.
+    */
     public partial class MainWindow : Window
     {
+        /*
+        * METHOD       : MainWindow
+        * DESCRIPTION  :
+        *   Initializes the UI components.
+        * PARAMETERS   : NONE
+        * RETURNS      : NONE
+        */
         public MainWindow()
         {
             InitializeComponent();
+
+            return;
         }
     }
 }
