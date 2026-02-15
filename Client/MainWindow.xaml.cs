@@ -1,33 +1,30 @@
-﻿using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+﻿using System.Windows;
+using WordGameClient.Models;
+using WordGameClient.ViewModels;
 
 namespace WordGameClient
 {
-    /*
-    * CLASS        : MainWindow
-    * DESCRIPTION  :
-    *   Main WPF window.
-    */
+
     public partial class MainWindow : Window
     {
-        /*
-        * METHOD       : MainWindow
-        * DESCRIPTION  :
-        *   Initializes the UI components.
-        * PARAMETERS   : NONE
-        * RETURNS      : NONE
-        */
         public MainWindow()
         {
+            ClientSettings? settings = null;
+            string configError = string.Empty;
+            bool loaded = false;
+
             InitializeComponent();
+
+            loaded = ClientSettings.TryLoad(out settings, out configError);
+
+            if ((loaded == true) && (settings != null))
+            {
+                this.DataContext = new MainWindowViewModel(settings, string.Empty);
+            }
+            else
+            {
+                this.DataContext = new MainWindowViewModel(null, configError);
+            }
 
             return;
         }
