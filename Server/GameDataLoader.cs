@@ -1,4 +1,12 @@
-﻿using System;
+﻿/*
+* FILE :GameDataLoader.cs
+* PROJECT : A02 TCPIP
+* PROGRAMMER : Cy Iver Torrefranca
+* DESCRIPTION :
+* The functions in this file are used to ...
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
