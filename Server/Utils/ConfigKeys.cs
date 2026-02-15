@@ -22,6 +22,7 @@ namespace WordGameServer.Utils
     //
     public static class ConfigKeys
     {
+        public const string ServerIP = "ServerIP";
         public const string ServerPort = "ServerPort";
         public const string GameDataDirectory = "GameDataDirectory";
         public const string GameDurationSeconds = "GameDurationSeconds";

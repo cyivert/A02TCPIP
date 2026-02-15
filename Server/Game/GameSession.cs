@@ -29,9 +29,9 @@ namespace WordGameServer.Game
         private static readonly int BasePointsPerWord;
         private static readonly int TimeBonusMultiplier;
 
-        private readonly GameData gameData;
-        private readonly HashSet<string> foundWords;
-        private readonly GameTimer gameTimer;
+        // private readonly GameData gameData;
+        // private readonly HashSet<string> foundWords;
+        // private readonly GameTimer gameTimer;
         private readonly object sessionLock;
         private int guessCount;
         private GameStatus status;
