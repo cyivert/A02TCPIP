@@ -11,8 +11,12 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using WordGameClient.Models;
+using WordGameClient.Network;
 using WordGameClient.Protocol;
 using WordGameClient.Utils;
+using System.Threading.Tasks;
+using WordGameClient.Network;
+
 
 namespace WordGameClient.ViewModels
 {
@@ -24,6 +28,8 @@ namespace WordGameClient.ViewModels
         private string puzzleString;
         private string guessWord;
         private string feedbackMessage;
+        private WordGameTcpClient? tcpClient;
+
 
         private bool isGameActive;
 
@@ -166,12 +172,69 @@ namespace WordGameClient.ViewModels
             return (canStart);
         }
 
+
         private void StartGame()
         {
+            _ = this.StartGameAsync();
             this.isGameActive = true;
 
             this.PuzzleString = "Waiting for server puzzle string...";
             this.FeedbackMessage = "UI ready. Next step will request: " + ProtocolCommands.GetStringFromServer;
+
+            this.startGameCommand.RaiseCanExecuteChanged();
+            this.submitGuessCommand.RaiseCanExecuteChanged();
+            this.newGameCommand.RaiseCanExecuteChanged();
+
+            return;
+        }
+
+        private async Task StartGameAsync()
+        {
+            if (this.settings == null)
+            {
+                this.FeedbackMessage = "Missing server settings (App.config).";
+            }
+            else
+            {
+                // Create client if needed
+                if (this.tcpClient == null)
+                {
+                    this.tcpClient = new WordGameTcpClient();
+                }
+
+                if (this.tcpClient.IsConnected == false)
+                {
+                    NetworkResult connectResult = await this.tcpClient.ConnectAsync(
+                        this.settings.ServerIp,
+                        this.settings.ServerPort,
+                        this.settings.ConnectTimeoutMs,
+                        this.settings.IoTimeoutMs,
+                        CancellationToken.None);
+
+                    if (connectResult.IsSuccess == false)
+                    {
+                        this.FeedbackMessage = "Connect failed: " + connectResult.ErrorMessage;
+                        return;
+                    }
+                }
+
+                // REQUEST: ask server for puzzle string (your protocol command)
+                NetworkResult response = await this.tcpClient.SendRequestAsync(
+                    ProtocolCommands.GetStringFromServer,
+                    this.settings.IoTimeoutMs,
+                    CancellationToken.None);
+
+                if (response.IsSuccess == false)
+                {
+                    this.FeedbackMessage = "Request failed: " + response.ErrorMessage;
+                }
+                else
+                {
+                    this.PuzzleString = response.Message;
+                    this.isGameActive = true;
+                    this.FeedbackMessage = "Game started. Enter a word.";
+                }
+            }
 
             this.startGameCommand.RaiseCanExecuteChanged();
             this.submitGuessCommand.RaiseCanExecuteChanged();

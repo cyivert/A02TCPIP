@@ -13,5 +13,9 @@ namespace WordGameClient.Utils
     {
         public const string ServerIp = "serverIp";
         public const string ServerPort = "serverPort";
+
+        public const string ConnectTimeoutMs = "connectTimeoutMs";
+        public const string IoTimeoutMs = "ioTimeoutMs";
     }
+
 }
