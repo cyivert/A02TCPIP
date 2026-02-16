@@ -1,7 +1,7 @@
 ﻿/*
 * FILE            : MainWindowViewModel.cs
 * PROJECT         : A02TCPIP
-* PROGRAMMER      : Tuan Thanh Nguyen
+* PROGRAMMER      : Tuan Thanh Nguyen & Ritik Vyas
 * FIRST VERSION   : 2026-02-14
 * DESCRIPTION     :
 *   ViewModel for the MainWindow UI
@@ -86,7 +86,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : string
         //
-
         public string ConfigurationErrorMessage
         {
             get { return (this.configurationErrorMessage); }
@@ -106,7 +105,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : Visibility
         //
-
         public Visibility ConfigurationErrorVisibility
         {
             get
@@ -128,7 +126,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : string
         //
-
         public string ServerEndpointLabel
         {
             get { return (this.serverEndpointLabel); }
@@ -165,7 +162,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : string
         //
-
         public string PlayerEmail
         {
             get { return (this.playerEmail); }
@@ -184,7 +180,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : string
         //
-
         public string PuzzleString
         {
             get { return (this.puzzleString); }
@@ -203,7 +198,6 @@ namespace WordGameClient.ViewModels
         // PARAMETERS : n/a
         // RETURNS : string
         //
-
         public string GuessWord
         {
             get { return (this.guessWord); }

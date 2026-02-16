@@ -1,7 +1,7 @@
 ﻿/*
 * FILE            : ViewModelBase.cs
 * PROJECT         : A02TCPIP
-* PROGRAMMER      : Tuan Thanh Nguyen
+* PROGRAMMER      : Tuan Thanh Nguyen & Ritik Vyas
 * FIRST VERSION   : 2026-02-14
 * DESCRIPTION     :
 *   Base ViewModel with property change notification for WPF bindings.
@@ -21,7 +21,6 @@ namespace WordGameClient.ViewModels
     public abstract class ViewModelBase : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
-
         //
         // FUNCTION : NotifyPropertyChanged
         // DESCRIPTION : Raises the PropertyChanged event for the specified property.

@@ -1,7 +1,7 @@
 ﻿/*
 * FILE            : MainWindow.xaml.cs
 * PROJECT         : A02TCPIP
-* PROGRAMMER      : Tuan Thanh Nguyen
+* PROGRAMMER      : Tuan Thanh Nguyen & Ritik Vyas
 * FIRST VERSION   : 2026-02-15
 * DESCRIPTION     :
 *   Main window code-behind. Wires MVVM DataContext.

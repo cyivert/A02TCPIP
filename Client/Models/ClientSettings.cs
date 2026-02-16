@@ -1,12 +1,11 @@
 ﻿/*
 * FILE            : ClientSettings.cs
 * PROJECT         : A02TCPIP
-* PROGRAMMER      : Tuan Thanh Nguyen
+* PROGRAMMER      : Tuan Thanh Nguyen & Ritik Vyas
 * FIRST VERSION   : 2026-02-14
 * DESCRIPTION     :
 *   Loads and validates client configuration from App.config.
 */
-
 using System;
 using System.Configuration;
 using WordGameClient.Utils;
@@ -47,7 +46,6 @@ namespace WordGameClient.Models
         //              int ioTimeoutMs - validated I/O timeout in ms.
         // RETURNS : n/a (constructor)
         //
-
         private ClientSettings(string serverIp, int serverPort, int connectTimeoutMs, int ioTimeoutMs)
         {
             this.ServerIp = serverIp;

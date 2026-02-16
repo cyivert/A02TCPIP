@@ -2,7 +2,6 @@
 * FILE : Program.cs
 * PROJECT : A02 TCPIP
 * PROGRAMMER : Cy Iver Torrefranca
-* FIRST VERSION : 
 * DESCRIPTION :
 * This is the main entry point for the Word Game Server application. It initializes the server, reads configuration settings, validates game data files,
 * and starts the server to listen for incoming client connections. The program also handles graceful shutdown when a termination signal is received (e.g., Ctrl+C) 
@@ -135,11 +134,16 @@ namespace WordGameServer
         }
 
         //
-        // FUNCTION : ParseIPAddress
-        // DESCRIPTION : Parses a string representation of an IP address into an IPAddress object,
-        // handling special keywords like "ANY", "LOCALHOST", "IPV6ANY", and defaults to IPAddress.Any if invalid.
-        // PARAMETERS : string? ipValue - the IP string from config; Logger logger - for logging warnings/messages
-        // RETURNS : IPAddress object
+        // METHOD : ParseIPAddress
+        // DESCRIPTION :
+        // This method takes a string representation of an IP address and attempts to parse it into an IPAddress object.
+        // It handles various special cases such as "ANY", "LOCALHOST", and "IPV6ANY", as well as validating the format of the IP address.
+        // If the input is invalid or empty, it defaults to using IPAddress.Any (
+        // PARAMETERS : 
+        // string ipValue - The string value representing the IP address to be parsed, typically read from the application configuration.
+        // Logger logger - An instance of the Logger class used to log messages and warnings during the parsing process, providing feedback on the configuration and any issues encountered.
+        // RETURNS : 
+        // IPAddress - The parsed IPAddress object based on the input string, or IPAddress.Any if the input is invalid or empty, allowing the server to bind to all available network interfaces.
         //
         private static IPAddress ParseIPAddress(string? ipValue, Logger logger)
         {
@@ -191,10 +195,13 @@ namespace WordGameServer
         }
 
         //
-        // FUNCTION : OnCancelKeyPress
-        // DESCRIPTION : Event handler for Ctrl+C. Cancels the cancellation token source to signal graceful shutdown.
-        // PARAMETERS : object? sender - event source; ConsoleCancelEventArgs eventArgs - event data, set Cancel to true to prevent immediate termination
-        // RETURNS : n/a
+        // METHOD : OnCancelKeyPress
+        // DESCRIPTION : This event handler is invoked when the user presses Ctrl+C in the console.
+        // It signals the server to shut down gracefully by canceling the cancellation token, allowing any ongoing operations to complete before the application exits.
+        // PARAMETERS : 
+        // object sender - The source of the event, typically the console.
+        // ConsoleCancelEventArgs eventArgs - Contains information about the cancel key press event, including a Cancel property that
+        // can be set to true to prevent the default behavior of terminating the application immediately.
         //
         private static void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
         {
