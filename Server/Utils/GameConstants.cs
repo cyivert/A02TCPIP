@@ -20,7 +20,7 @@ namespace WordGameServer.Utils
         public const int MinPortNumber = 1;                                     // Minimum valid port number for the game server to listen on.
         public const int MaxPortNumber = 65535;                                 // Maximum valid port number for the game server to listen on.
         public const int MaxConcurrentClients = 100;                            // Maximum number of concurrent client connections the server can handle.
-        public const int ClientReadTimeoutMs = 30000;                           // Timeout duration in milliseconds for reading data from a client connection.
+        public const int ClientReadTimeoutMs = 150000;                          // Timeout duration in milliseconds for reading data from a client connection (2.5 minutes to allow client-side idle management).
 
         // Game Timing
         public const int DefaultGameDurationSeconds = 120;                      // Default duration of a game session in seconds.
@@ -32,6 +32,12 @@ namespace WordGameServer.Utils
         public const int DefaultTimeBonusMultiplier = 2;                        // Default multiplier for calculating time-based bonus points, which encourages players to find words more quickly.
         public const int MinPointsPerWord = 10;                                 // Minimum points awarded for each valid word found by the player.
         public const int MinBonusMultiplier = 1;                                // Minimum multiplier for calculating time-based bonus points.
+        public const int DefaultWrongGuessPenalty = 10;                         // Default points deducted for each wrong guess.
+        public const int MinWrongGuessPenalty = 0;                              // Minimum penalty for wrong guesses.
+
+        // Tries
+        public const int DefaultMaxGuesses = 20;                                // Default maximum number of incorrect guesses allowed before the game is over.
+        public const int MinMaxGuesses = 5;                                    // Minimum number of incorrect guesses allowed.
 
         // Puzzle Requirements
         public const int RequiredPuzzleLength = 30;                             // Required length of the puzzle string, which represents the letters available for forming words in the game.

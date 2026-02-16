@@ -12,9 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="GameData\*.txt">
+    <Content Include="GameData\game.txt" Link="game.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

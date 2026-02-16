@@ -81,6 +81,19 @@ namespace WordGameServer.Network
                 this.logger.LogMessage("Press Ctrl+C to shutdown");
                 this.logger.LogMessage("");
 
+                // Register cancellation to stop the listener, which unblocks AcceptTcpClientAsync
+                cancellationToken.Register(() =>
+                {
+                    try
+                    {
+                        this.listener?.Stop();
+                    }
+                    catch
+                    {
+                        // Ignore errors during forced stop
+                    }
+                });
+
                 await this.AcceptClientsAsync(cancellationToken);
             }
             catch (OperationCanceledException)
@@ -124,12 +137,29 @@ namespace WordGameServer.Network
         {
             Task<TcpClient>? acceptTask = null;
             TcpClient? client = null;
+            DateTime lastWaitingLog = DateTime.UtcNow;
 
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    acceptTask = this.listener.AcceptTcpClientAsync();
+                    acceptTask = this.listener!.AcceptTcpClientAsync();
+
+                    // Wait for a client with periodic "waiting" log every 30 seconds
+                    while (!acceptTask.IsCompleted)
+                    {
+                        Task completedTask = await Task.WhenAny(acceptTask, Task.Delay(30000, cancellationToken));
+
+                        if (completedTask != acceptTask)
+                        {
+                            // Timeout elapsed, log waiting message if no connections are active
+                            if (this.activeConnections == 0)
+                            {
+                                this.logger.LogMessage("Waiting for client connections...");
+                            }
+                        }
+                    }
+
                     client = await acceptTask;
 
                     Interlocked.Increment(ref this.activeConnections);

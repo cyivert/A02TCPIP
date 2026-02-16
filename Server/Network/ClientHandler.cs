@@ -35,6 +35,8 @@ namespace WordGameServer.Network
         private StreamReader? reader;
         private StreamWriter? writer;
         private GameSession? currentGame;
+        private string playerName;
+        private string playerEmail;
 
         //
         // CONSTRUCTOR : ClientHandler
@@ -54,6 +56,8 @@ namespace WordGameServer.Network
             this.reader = null;
             this.writer = null;
             this.currentGame = null;
+            this.playerName = "Unknown";
+            this.playerEmail = "N/A";
 
             return;
         }
@@ -136,6 +140,13 @@ namespace WordGameServer.Network
             }
             finally
             {
+                // Log performance summary if game was active when client disconnected
+                if (this.currentGame != null && this.currentGame.Status == GameStatus.Active)
+                {
+                    this.currentGame.Status = GameStatus.Ended;
+                    this.LogPerformanceSummary("CLIENT DISCONNECTED");
+                }
+
                 try
                 {
                     this.writer?.Close();
@@ -153,7 +164,7 @@ namespace WordGameServer.Network
 
         //
         // METHOD : ProcessRequestAsync
-        // DESCRIPTION : This asynchronous method processes a single request from the client and sends back an appropriate response based on the command received.
+        // DESCRIPTION : This asynchronously method processes a single request from the client and sends back an appropriate response based on the command received.
         // PARAMETERS : 
         // string request - The raw request string received from the client. This string is expected to follow a specific format based on the defined protocol commands.
         // CancellationToken cancellationToken - A token used to signal cancellation of the request processing. This allows for graceful shutdown of the client handler when requested.
@@ -178,7 +189,11 @@ namespace WordGameServer.Network
                 switch (command)
                 {
                     case ProtocolCommands.Start:
-                        await this.HandleStartGameAsync(cancellationToken);
+                        string startPlayerName = (messageParts.Length >= 2) ? messageParts[1].Trim() : "Unknown";
+                        string startPlayerEmail = (messageParts.Length >= 3) ? messageParts[2].Trim() : "N/A";
+                        this.playerName = startPlayerName;
+                        this.playerEmail = startPlayerEmail;
+                        await this.HandleStartGameAsync(startPlayerName, startPlayerEmail, cancellationToken);
                         break;
 
                     case ProtocolCommands.Guess:
@@ -243,7 +258,7 @@ namespace WordGameServer.Network
         // RETURNS :
         // Task - Represents the asynchronous operation of starting a game. The method completes when the game has been initialized and the response has been sent to the client.
         //
-        private async Task HandleStartGameAsync(CancellationToken cancellationToken)
+        private async Task HandleStartGameAsync(string playerName, string playerEmail, CancellationToken cancellationToken)
         {
             GameData? gameData = null;
             string response = string.Empty;
@@ -256,10 +271,10 @@ namespace WordGameServer.Network
                 gameData = GameDataLoader.LoadRandomGame();
                 this.currentGame = new GameSession(gameData);
 
-                response = $"{ProtocolCommands.GameStart}|{gameData.PuzzleString}|{gameData.WordCount}|{GameSession.GameDurationSeconds}";
+                response = $"{ProtocolCommands.GameStart}|{gameData.PuzzleString}|{gameData.WordCount}|{GameSession.GameDurationSeconds}|{GameSession.MaxGuesses}";
                 await this.SendResponseAsync(response, cancellationToken);
 
-                this.logger.LogMessage($"[{clientEndpoint}] Game started - Puzzle: {gameData.PuzzleString}");
+                this.logger.LogMessage($"[{clientEndpoint}] Player '{playerName}' ({playerEmail}) started game - Puzzle: {gameData.PuzzleString}, Words: {gameData.WordCount}, Duration: {GameSession.GameDurationSeconds}s, MaxTries: {GameSession.MaxGuesses}");
             }
             catch (Exception exception)
             {
@@ -298,14 +313,23 @@ namespace WordGameServer.Network
 
             if (this.currentGame.Status != GameStatus.Active)
             {
-                await this.SendResponseAsync($"{ProtocolCommands.Error}|Cannot guess - game is not active", cancellationToken);
+                await this.SendResponseAsync($"{ProtocolCommands.GameOver}|Game is not active", cancellationToken);
                 return;
             }
 
             if (this.currentGame.IsGameOver())
             {
                 this.currentGame.Status = GameStatus.Lost;
+                this.LogPerformanceSummary("TIME EXPIRED");
                 await this.SendResponseAsync($"{ProtocolCommands.GameOver}|TIME EXPIRED", cancellationToken);
+                return;
+            }
+
+            if (this.currentGame.IsOutOfTries())
+            {
+                this.currentGame.Status = GameStatus.Lost;
+                this.LogPerformanceSummary("OUT OF TRIES");
+                await this.SendResponseAsync($"{ProtocolCommands.GameOver}|OUT OF TRIES! Score: {this.currentGame.GetScore()}", cancellationToken);
                 return;
             }
 
@@ -314,34 +338,47 @@ namespace WordGameServer.Network
             switch (guessResult)
             {
                 case GuessResult.Found:
-                    response = $"{ProtocolCommands.WordFound}|{word.ToUpper()}|{this.currentGame.GetFoundCount()}|{this.currentGame.GetTotalWords()}";
-                    this.logger.LogMessage($"[{clientEndpoint}] Word found: {word}");
-
                     if (this.currentGame.IsGameComplete())
                     {
                         this.currentGame.Status = GameStatus.Won;
-                        await this.SendResponseAsync(response, cancellationToken);
-                        await this.SendResponseAsync($"{ProtocolCommands.GameOver}|ALL WORDS FOUND! Score: {this.currentGame.GetScore()}|Guesses: {this.currentGame.GuessCount}", cancellationToken);
-                        return;
+                        response = $"{ProtocolCommands.GameOver}|ALL WORDS FOUND! Score: {this.currentGame.GetScore()}|Guesses: {this.currentGame.GuessCount}";
+                        this.logger.LogMessage($"[{clientEndpoint}] Word found: {word} - All words found! Score: {this.currentGame.GetScore()}");
+                        this.LogPerformanceSummary("ALL WORDS FOUND");
+                    }
+                    else
+                    {
+                        response = $"{ProtocolCommands.WordFound}|{word.ToUpper()}|{this.currentGame.GetFoundCount()}|{this.currentGame.GetTotalWords()}";
+                        this.logger.LogMessage($"[{clientEndpoint}] Word found: {word} ({this.currentGame.GetFoundCount()}/{this.currentGame.GetTotalWords()})");
                     }
                     break;
 
                 case GuessResult.AlreadyFound:
                     response = $"{ProtocolCommands.WordAlreadyExist}|{word.ToUpper()}";
+                    this.logger.LogMessage($"[{clientEndpoint}] Word already found: {word}");
                     break;
 
                 case GuessResult.NotFound:
                     response = $"{ProtocolCommands.WordDoesNotExist}|{word.ToUpper()}";
+                    this.logger.LogMessage($"[{clientEndpoint}] Word not found: {word} (Wrong guess {this.currentGame.GuessCount}/{GameSession.MaxGuesses})");
                     break;
 
                 case GuessResult.TimeExpired:
                     this.currentGame.Status = GameStatus.Lost;
-                    response = $"{ProtocolCommands.GameOver}|TIME EXPIRED";
+                    response = $"{ProtocolCommands.GameOver}|TIME EXPIRED! Score: {this.currentGame.GetScore()}";
+                    this.LogPerformanceSummary("TIME EXPIRED");
                     break;
 
                 default:
                     response = $"{ProtocolCommands.Error}|Invalid guess";
                     break;
+            }
+
+            // Check if out of tries after this guess
+            if ((this.currentGame.Status == GameStatus.Active) && this.currentGame.IsOutOfTries())
+            {
+                this.currentGame.Status = GameStatus.Lost;
+                response = $"{ProtocolCommands.GameOver}|OUT OF TRIES! Score: {this.currentGame.GetScore()}";
+                this.LogPerformanceSummary("OUT OF TRIES");
             }
 
             await this.SendResponseAsync(response, cancellationToken);
@@ -364,6 +401,8 @@ namespace WordGameServer.Network
             int totalWords = 0;
             int remainingSeconds = 0;
             int guessCount = 0;
+            int score = 0;
+            int maxGuesses = 0;
 
             if (this.currentGame == null)
             {
@@ -375,9 +414,21 @@ namespace WordGameServer.Network
             totalWords = this.currentGame.GetTotalWords();
             remainingSeconds = this.currentGame.GetRemainingSeconds();
             guessCount = this.currentGame.GuessCount;
+            score = this.currentGame.GetScore();
+            maxGuesses = GameSession.MaxGuesses;
 
-            response = $"{ProtocolCommands.ProgressUpdate}|{foundCount}|{totalWords}|{remainingSeconds}|{guessCount}";
+            // Detect time expiry during progress poll and log performance summary
+            if (remainingSeconds <= 0 && this.currentGame.Status == GameStatus.Active)
+            {
+                this.currentGame.Status = GameStatus.Lost;
+                this.LogPerformanceSummary("TIME EXPIRED");
+            }
+
+            response = $"{ProtocolCommands.ProgressUpdate}|{foundCount}|{totalWords}|{remainingSeconds}|{guessCount}|{score}|{maxGuesses}";
             await this.SendResponseAsync(response, cancellationToken);
+
+            string clientEndpoint = this.client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+            this.logger.LogDebug($"[{clientEndpoint}] Progress: Found={foundCount}/{totalWords}, Time={remainingSeconds}s, WrongGuesses={guessCount}/{maxGuesses}, Score={score}");
 
             return;
         }
@@ -402,10 +453,10 @@ namespace WordGameServer.Network
             if (this.currentGame != null)
             {
                 finalScore = this.currentGame.GetScore();
+                this.LogPerformanceSummary("Game ended by client");
                 this.currentGame.Status = GameStatus.Ended;
                 this.currentGame = null;
                 await this.SendResponseAsync($"{ProtocolCommands.GameEnded}|Score: {finalScore}", cancellationToken);
-                this.logger.LogMessage($"[{clientEndpoint}] Game ended by client");
             }
             else
             {
@@ -433,6 +484,35 @@ namespace WordGameServer.Network
 
             await this.SendResponseAsync(GameConstants.GoodbyeMessage, cancellationToken);
             this.logger.LogMessage($"[{clientEndpoint}] Client quit gracefully");
+
+            return;
+        }
+
+        private void LogPerformanceSummary(string result)
+        {
+            string clientEndpoint = this.client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+
+            if (this.currentGame != null)
+            {
+                int foundCount = this.currentGame.GetFoundCount();
+                int totalWords = this.currentGame.GetTotalWords();
+                int guessCount = this.currentGame.GuessCount;
+                int remainingSeconds = this.currentGame.GetRemainingSeconds();
+                int score = this.currentGame.GetScore();
+
+                this.logger.LogMessage($"");
+                this.logger.LogMessage($"========== PERFORMANCE SUMMARY ==========");
+                this.logger.LogMessage($"  Client:         {clientEndpoint}");
+                this.logger.LogMessage($"  Player Name:    {this.playerName}");
+                this.logger.LogMessage($"  Player Email:   {this.playerEmail}");
+                this.logger.LogMessage($"  Words Found:    {foundCount} / {totalWords}");
+                this.logger.LogMessage($"  Wrong Guesses:  {guessCount} / {GameSession.MaxGuesses}");
+                this.logger.LogMessage($"  Time Remaining: {remainingSeconds}s");
+                this.logger.LogMessage($"  Final Score:    {score}");
+                this.logger.LogMessage($"  Result:         {result}");
+                this.logger.LogMessage($"=========================================");
+                this.logger.LogMessage($"");
+            }
 
             return;
         }

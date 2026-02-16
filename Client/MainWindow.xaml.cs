@@ -7,8 +7,9 @@
 *   Main window code-behind. Wires MVVM DataContext.
 */
 
-using System.Configuration;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
 using WordGameClient.ViewModels;
 
 namespace WordGameClient
@@ -26,42 +27,52 @@ namespace WordGameClient
 
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            this.Close();
 
             return;
         }
 
-        private void UserSettingsMenuItem_Click(object sender, RoutedEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
-            string playerName = string.Empty;
-
             MainWindowViewModel? viewModel = this.DataContext as MainWindowViewModel;
 
-            if (viewModel != null)
+            if (viewModel != null && viewModel.ConnectionStatus == "CONNECTED")
             {
-                playerName = viewModel.PlayerName;
+                MessageBoxResult result = MessageBox.Show(
+                    "You are still connected to the server.\nPlease disconnect first using File > Disconnect before exiting.\n\nDisconnect now and exit?",
+                    "Still Connected",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                // User chose yes - disconnect and exit
+                viewModel.DisconnectCommand.Execute(null);
             }
-
-            string message = "Player Name: " + (string.IsNullOrWhiteSpace(playerName) ? "(not set)" : playerName);
-
-            MessageBox.Show(message, "User Settings", MessageBoxButton.OK, MessageBoxImage.Information);
 
             return;
         }
 
         private void ConnectionMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            string serverIp = ConfigurationManager.AppSettings["serverIp"] ?? "(not set)";
-            string serverPort = ConfigurationManager.AppSettings["serverPort"] ?? "(not set)";
-            string connectTimeout = ConfigurationManager.AppSettings["connectTimeoutMs"] ?? "(not set)";
-            string ioTimeout = ConfigurationManager.AppSettings["ioTimeoutMs"] ?? "(not set)";
+            ConnectionSettingsWindow settingsWindow = new ConnectionSettingsWindow();
+            settingsWindow.Owner = this;
+            bool? result = settingsWindow.ShowDialog();
 
-            string message = "Server IP: " + serverIp + "\n"
-                           + "Server Port: " + serverPort + "\n"
-                           + "Connect Timeout (ms): " + connectTimeout + "\n"
-                           + "I/O Timeout (ms): " + ioTimeout;
+            if (result == true && settingsWindow.SettingsChanged)
+            {
+                MainWindowViewModel? viewModel = this.DataContext as MainWindowViewModel;
 
-            MessageBox.Show(message, "Connection Settings", MessageBoxButton.OK, MessageBoxImage.Information);
+                if (viewModel != null)
+                {
+                    viewModel.ServerEndpointLabel = "Server: " + settingsWindow.ServerIp + ":" + settingsWindow.ServerPort;
+                    viewModel.LogMessages.Add("Settings saved: " + settingsWindow.ServerIp + ":" + settingsWindow.ServerPort);
+                }
+            }
 
             return;
         }
@@ -74,6 +85,21 @@ namespace WordGameClient
                            + "Programmer: Cy, Thanh, Ritik";
 
             MessageBox.Show(message, "About Word Game", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            return;
+        }
+
+        private void GuessWordTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                MainWindowViewModel? viewModel = this.DataContext as MainWindowViewModel;
+
+                if ((viewModel != null) && (viewModel.SubmitGuessCommand.CanExecute(null) == true))
+                {
+                    viewModel.SubmitGuessCommand.Execute(null);
+                }
+            }
 
             return;
         }
