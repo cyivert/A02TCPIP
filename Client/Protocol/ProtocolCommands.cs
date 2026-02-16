@@ -9,6 +9,13 @@
 
 namespace WordGameClient.Protocol
 {
+    //
+    // CLASS : ProtocolCommands
+    // DESCRIPTION : Static class containing constant string definitions for all client-server protocol commands and responses.
+    //               Matches the protocol defined by the server.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public static class ProtocolCommands
     {
         // Client to Server Commands

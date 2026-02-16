@@ -9,6 +9,13 @@
 
 namespace WordGameClient.Protocol
 {
+    //
+    // CLASS : ProtocolConstants
+    // DESCRIPTION : Static class containing protocol constants specific to the client side,
+    //               such as delimiters used in protocol messages.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public static class ProtocolConstants
     {
         public const char Delimiter = '|';

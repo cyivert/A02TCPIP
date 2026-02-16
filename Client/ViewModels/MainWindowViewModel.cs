@@ -26,6 +26,13 @@ using WordGameClient.Protocol;
 
 namespace WordGameClient.ViewModels
 {
+    //
+    // CLASS : MainWindowViewModel
+    // DESCRIPTION : ViewModel for the main game window. Manages UI state, handles user commands (start, guess, etc.),
+    //               communicates with the game server via TCP, and updates the UI accordingly.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public sealed class MainWindowViewModel : ViewModelBase
     {
         private const string HighScoreFilePath = "highscores.txt";
@@ -73,6 +80,13 @@ namespace WordGameClient.ViewModels
         public AsyncRelayCommand PlayAgainNoCommand { get; }
         public AsyncRelayCommand DisconnectCommand { get; }
 
+        //
+        // PROPERTY : ConfigurationErrorMessage
+        // DESCRIPTION : Gets or sets the configuration error message. Updates visibility of error display.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
+
         public string ConfigurationErrorMessage
         {
             get { return (this.configurationErrorMessage); }
@@ -85,6 +99,13 @@ namespace WordGameClient.ViewModels
                 return;
             }
         }
+
+        //
+        // PROPERTY : ConfigurationErrorVisibility
+        // DESCRIPTION : Returns Visibility.Visible if ConfigurationErrorMessage is not empty, otherwise Collapsed.
+        // PARAMETERS : n/a
+        // RETURNS : Visibility
+        //
 
         public Visibility ConfigurationErrorVisibility
         {
@@ -101,6 +122,13 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : ServerEndpointLabel
+        // DESCRIPTION : Display label showing server IP and port.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
+
         public string ServerEndpointLabel
         {
             get { return (this.serverEndpointLabel); }
@@ -113,6 +141,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : PlayerName
+        // DESCRIPTION : Gets or sets the player name input.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
         public string PlayerName
         {
             get { return (this.playerName); }
@@ -124,6 +158,13 @@ namespace WordGameClient.ViewModels
                 return;
             }
         }
+
+        //
+        // PROPERTY : PlayerEmail
+        // DESCRIPTION : Gets or sets the player email input.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
 
         public string PlayerEmail
         {
@@ -137,6 +178,13 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : PuzzleString
+        // DESCRIPTION : Gets the current puzzle string (display only).
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
+
         public string PuzzleString
         {
             get { return (this.puzzleString); }
@@ -148,6 +196,13 @@ namespace WordGameClient.ViewModels
                 return;
             }
         }
+
+        //
+        // PROPERTY : GuessWord
+        // DESCRIPTION : Gets or sets the current guess word input.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
 
         public string GuessWord
         {
@@ -161,6 +216,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : FeedbackMessage
+        // DESCRIPTION : Gets the feedback message displayed to the user.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
         public string FeedbackMessage
         {
             get { return (this.feedbackMessage); }
@@ -173,6 +234,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : TimeLeftSeconds
+        // DESCRIPTION : Gets the remaining game time in seconds.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int TimeLeftSeconds
         {
             get { return (this.timeLeftSeconds); }
@@ -185,6 +252,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : WordsLeft
+        // DESCRIPTION : Gets the number of words remaining to find.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int WordsLeft
         {
             get { return (this.wordsLeft); }
@@ -197,6 +270,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : TriesUsed
+        // DESCRIPTION : Gets the number of guesses used so far.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int TriesUsed
         {
             get { return (this.triesUsed); }
@@ -209,6 +288,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : MaxTries
+        // DESCRIPTION : Gets the maximum allowed guesses.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int MaxTries
         {
             get { return (this.maxTries); }
@@ -221,6 +306,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : CurrentScore
+        // DESCRIPTION : Gets the current score.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int CurrentScore
         {
             get { return (this.currentScore); }
@@ -233,6 +324,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : IsBusy
+        // DESCRIPTION : True if an asynchronous operation is in progress; disables commands.
+        // PARAMETERS : n/a
+        // RETURNS : bool
+        //
         public bool IsBusy
         {
             get { return (this.isBusy); }
@@ -245,6 +342,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : ConnectionStatus
+        // DESCRIPTION : Gets or sets the connection status string.
+        // PARAMETERS : n/a
+        // RETURNS : string
+        //
         public string ConnectionStatus
         {
             get { return (this.connectionStatus); }
@@ -257,6 +360,12 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // PROPERTY : HighScore
+        // DESCRIPTION : Gets the highest score achieved this session.
+        // PARAMETERS : n/a
+        // RETURNS : int
+        //
         public int HighScore
         {
             get { return (this.highScore); }
@@ -269,6 +378,13 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        //
+        // FUNCTION : MainWindowViewModel (constructor)
+        // DESCRIPTION : Initializes the ViewModel, sets up commands, loads high score, and initializes timers.
+        // PARAMETERS : ClientSettings? settings - validated settings or null if config error;
+        //              string configurationErrorMessage - error message if config failed.
+        // RETURNS : n/a
+        //
         public MainWindowViewModel(ClientSettings? settings, string configurationErrorMessage)
         {
             this.settings = settings;
@@ -328,6 +444,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : OnProgressTimerTick
+        // DESCRIPTION : Timer tick handler for periodic progress updates. Fetches current game state from server.
+        // PARAMETERS : object? sender - event source; EventArgs e - event data.
+        // RETURNS : void (async void)
+        //
         private async void OnProgressTimerTick(object? sender, EventArgs e)
         {
             if ((this.isGameActive == false) || (this.tcpClient.IsConnected == false) || (this.isBusy == true))
@@ -346,6 +468,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : StartProgressTimer
+        // DESCRIPTION : Starts the progress update timer.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         private void StartProgressTimer()
         {
             this.progressTimer?.Start();
@@ -353,6 +481,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : StopProgressTimer
+        // DESCRIPTION : Stops the progress update timer.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         private void StopProgressTimer()
         {
             this.progressTimer?.Stop();
@@ -360,6 +494,13 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : ShowGameOverPopup
+        // DESCRIPTION : Displays a modal popup with game over message and score, asks to play again.
+        //               Updates high score if current score exceeds previous high.
+        // PARAMETERS : string reason - reason for game over; int score - final score.
+        // RETURNS : void
+        //
         private void ShowGameOverPopup(string reason, int score)
         {
             this.StopIdleTimer();
@@ -389,6 +530,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : LoadHighScore
+        // DESCRIPTION : Loads the highest score from the local highscore file.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         private void LoadHighScore()
         {
             try
@@ -421,6 +568,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : SaveHighScore
+        // DESCRIPTION : Appends the new high score to the local highscore file with player info.
+        // PARAMETERS : int score - the score to save.
+        // RETURNS : void
+        //
         private void SaveHighScore(int score)
         {
             try
@@ -448,6 +601,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : CanStartGame
+        // DESCRIPTION : Determines whether the StartGame command can execute.
+        // PARAMETERS : n/a
+        // RETURNS : bool
+        //
         private bool CanStartGame()
         {
             bool canStart = false;
@@ -462,6 +621,12 @@ namespace WordGameClient.ViewModels
             return (canStart);
         }
 
+        //
+        // FUNCTION : CanUseSession
+        // DESCRIPTION : Determines whether the client can perform game actions (connected, game active, not busy).
+        // PARAMETERS : n/a
+        // RETURNS : bool
+        //
         private bool CanUseSession()
         {
             bool canUse = false;
@@ -477,6 +642,12 @@ namespace WordGameClient.ViewModels
             return (canUse);
         }
 
+        //
+        // FUNCTION : CanSubmitGuess
+        // DESCRIPTION : Determines whether the SubmitGuess command can execute.
+        // PARAMETERS : n/a
+        // RETURNS : bool
+        //
         private bool CanSubmitGuess()
         {
             bool canSubmit = false;
@@ -490,6 +661,12 @@ namespace WordGameClient.ViewModels
             return (canSubmit);
         }
 
+        //
+        // FUNCTION : CanPlayAgain
+        // DESCRIPTION : Determines whether the PlayAgain (Yes/No) and Disconnect commands can execute.
+        // PARAMETERS : n/a
+        // RETURNS : bool
+        //
         private bool CanPlayAgain()
         {
             bool canPlay = false;
@@ -503,6 +680,12 @@ namespace WordGameClient.ViewModels
             return (canPlay);
         }
 
+        //
+        // FUNCTION : AddLog
+        // DESCRIPTION : Adds a timestamped log message to the LogMessages collection.
+        // PARAMETERS : string message - the message to log.
+        // RETURNS : void
+        //
         private void AddLog(string message)
         {
             this.LogMessages.Add(message);
@@ -510,6 +693,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : SendAsync
+        // DESCRIPTION : Sends a request line to the server using the TCP client and returns the response.
+        // PARAMETERS : string requestLine - the protocol command line to send.
+        // RETURNS : Task<NetworkResult> - the server response wrapped in a NetworkResult.
+        //
         private async Task<NetworkResult> SendAsync(string requestLine)
         {
             NetworkResult result = new NetworkResult(false, string.Empty, "Missing settings.");
@@ -522,6 +711,13 @@ namespace WordGameClient.ViewModels
             return (result);
         }
 
+        //
+        // FUNCTION : StartGameAsync
+        // DESCRIPTION : Initiates a new game: validates name/email, connects to server (if not connected),
+        //               sends START command, processes GAMESTART response, and starts the progress timer.
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         private async Task StartGameAsync()
         {
             // Validate mandatory fields
@@ -682,6 +878,13 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : SubmitGuessAsync
+        // DESCRIPTION : Sends a GUESS command with the current guess word, processes the response,
+        //               updates UI (found words, words left, etc.), and checks for game over.
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         private async Task SubmitGuessAsync()
         {
             this.IsBusy = true;
@@ -799,6 +1002,13 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : RefreshProgressAsync
+        // DESCRIPTION : Sends a PROGRESS command to the server and updates UI with current game state.
+        //               Also detects game over conditions (time expired, all words found, out of tries).
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         private async Task RefreshProgressAsync()
         {
             if ((this.settings == null) || (this.tcpClient.IsConnected == false))
@@ -895,6 +1105,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : PlayAgainYesAsync
+        // DESCRIPTION : Handles user clicking "Yes" on the game over popup. Restarts the game.
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         private async Task PlayAgainYesAsync()
         {
             this.StopProgressTimer();
@@ -906,6 +1122,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : PlayAgainNoAsync
+        // DESCRIPTION : Handles user clicking "No" on the game over popup. Ends the game but stays connected.
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         private async Task PlayAgainNoAsync()
         {
             this.IsBusy = true;
@@ -932,6 +1154,13 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : OnIdleTimerTick
+        // DESCRIPTION : Timer tick handler for idle disconnect. Decrements remaining seconds and shows warnings.
+        //               Disconnects when timer reaches zero.
+        // PARAMETERS : object? sender - event source; EventArgs e - event data.
+        // RETURNS : void
+        //
         private void OnIdleTimerTick(object? sender, EventArgs e)
         {
             if (this.tcpClient.IsConnected == false)
@@ -967,6 +1196,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : StartIdleTimer
+        // DESCRIPTION : Starts the idle disconnect timer with initial timeout value.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         private void StartIdleTimer()
         {
             this.idleSecondsRemaining = IdleTimeoutSeconds;
@@ -977,6 +1212,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : StopIdleTimer
+        // DESCRIPTION : Stops the idle disconnect timer.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         private void StopIdleTimer()
         {
             this.idleTimer?.Stop();
@@ -984,6 +1225,12 @@ namespace WordGameClient.ViewModels
             return;
         }
 
+        //
+        // FUNCTION : DisconnectAsync
+        // DESCRIPTION : Sends a QUIT command to the server, disconnects the TCP client, and updates UI.
+        // PARAMETERS : n/a
+        // RETURNS : Task
+        //
         public async Task DisconnectAsync()
         {
             this.IsBusy = true;

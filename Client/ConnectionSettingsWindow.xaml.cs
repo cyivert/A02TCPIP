@@ -18,6 +18,13 @@ using System.IO;
 
 namespace WordGameClient
 {
+    //
+    // CLASS : ConnectionSettingsWindow
+    // DESCRIPTION : Modal dialog that allows the user to view and modify the server IP and port settings.
+    //               Changes are saved to the application configuration file (App.config) upon confirmation.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public partial class ConnectionSettingsWindow : Window
     {
         public string ServerIp { get; private set; }
@@ -25,6 +32,13 @@ namespace WordGameClient
         public bool SettingsChanged { get; private set; }
         public bool ConnectionSucceeded { get; private set; }
 
+        //
+        // FUNCTION : ConnectionSettingsWindow (constructor)
+        // DESCRIPTION : Initializes the dialog, loads current values from App.config,
+        //               and populates the text boxes.
+        // PARAMETERS : n/a
+        // RETURNS : n/a
+        //
         public ConnectionSettingsWindow()
         {
             InitializeComponent();
@@ -46,6 +60,14 @@ namespace WordGameClient
             return;
         }
 
+        //
+        // FUNCTION : SaveButton_Click
+        // DESCRIPTION : Event handler for the Save button. Validates the input,
+        //               saves the new settings to App.config, and closes the dialog.
+        // PARAMETERS : object sender - the source of the event (the Save button);
+        //              RoutedEventArgs e - event data.
+        // RETURNS : void
+        //
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             string ip = this.ServerIpTextBox.Text.Trim();
@@ -92,6 +114,13 @@ namespace WordGameClient
             return;
         }
 
+        //
+        // FUNCTION : CancelButton_Click
+        // DESCRIPTION : Event handler for the Cancel button. Closes the dialog without saving.
+        // PARAMETERS : object sender - the source of the event (the Cancel button);
+        //              RoutedEventArgs e - event data.
+        // RETURNS : void
+        //
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = false;
