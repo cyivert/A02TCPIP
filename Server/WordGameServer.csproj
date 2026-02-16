@@ -12,7 +12,16 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="GameData\game.txt" Link="game.txt">
+    <Content Include="GameData\game1.txt" Link="game1.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GameData\game2.txt" Link="game2.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GameData\game3.txt" Link="game3.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="GameData\game4.txt" Link="game4.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

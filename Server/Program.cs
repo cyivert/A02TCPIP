@@ -81,19 +81,19 @@ namespace WordGameServer
                 }
 
                 // Validate game data files before starting server
-                logger.LogMessage("Validating game data file...");
+                logger.LogMessage("Validating game data files...");
                 int validFileCount = GameDataLoader.ValidateAndLoadFiles(logger);
 
                 if (validFileCount == 0)
                 {
-                    logger.LogError("No valid game file found. Server cannot start.");
-                    logger.LogError("Ensure the game data file (configured in App.config as 'GameDataFile') exists alongside the executable.");
+                    logger.LogError("No valid game files found. Server cannot start.");
+                    logger.LogError("Ensure game data files matching the pattern (configured in App.config as 'GameDataFilePattern') exist alongside the executable.");
                     Console.WriteLine("Press any key to exit...");
                     Console.ReadKey();
                     return;
                 }
 
-                logger.LogMessage($"Successfully loaded {validFileCount} valid game file(s)");
+                logger.LogMessage($"Successfully loaded {validFileCount} valid game file(s) - a random game will be selected for each session");
                 Console.WriteLine();
 
                 // Initialize and start the server
