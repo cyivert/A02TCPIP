@@ -1,0 +1,34 @@
+<Window x:Class="WordGameClient.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Word Game" Height="280" Width="400"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Word Game" FontSize="24" FontWeight="Bold"
+                   HorizontalAlignment="Center" Margin="0,0,0,12"/>
+
+        <TextBlock Grid.Row="1" Text="A word puzzle game where players find hidden words within a scrambled letter string."
+                   TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center"
+                   Margin="0,0,0,16"/>
+
+        <TextBlock Grid.Row="2" Text="Team Members" FontSize="14" FontWeight="SemiBold"
+                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+
+        <StackPanel Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top">
+            <TextBlock Text="Cy Iver Torrefranca" HorizontalAlignment="Center"/>
+            <TextBlock Text="Tuan Thanh Nguyen" HorizontalAlignment="Center"/>
+            <TextBlock Text="Ritik Sanjev Vyas" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <Button Grid.Row="4" Content="OK" Width="80" Height="28"
+                HorizontalAlignment="Center" Click="OkButton_Click"/>
+    </Grid>
+</Window>
