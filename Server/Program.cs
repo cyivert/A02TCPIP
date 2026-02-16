@@ -32,6 +32,15 @@ namespace WordGameServer
     {
         // CancellationTokenSource to manage graceful shutdown of the server and its components.
         private static CancellationTokenSource? cancellationTokenSource;
+
+        //
+        // FUNCTION : Main
+        // DESCRIPTION : The entry point of the application. It initializes the logger, parses configuration settings,
+        //              validates game data files, and starts the server asynchronously. It also sets up a cancellation
+        //              token to handle graceful shutdown (Ctrl+C) and ensures proper cleanup of resources in the finally block.
+        // PARAMETERS : string[] args - Command-line arguments (not used in this implementation)
+        // RETURNS : Task - Represents the asynchronous operation of the Main method.
+        //
         static async Task Main(string[] args)
         {
             Console.Title = "Word Game Server";
@@ -193,7 +202,6 @@ namespace WordGameServer
         // object sender - The source of the event, typically the console.
         // ConsoleCancelEventArgs eventArgs - Contains information about the cancel key press event, including a Cancel property that
         // can be set to true to prevent the default behavior of terminating the application immediately.
-        // RETURNS : n/a
         //
         private static void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
         {

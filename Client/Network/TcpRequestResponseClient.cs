@@ -18,6 +18,14 @@ using WordGameClient.Models;
 
 namespace WordGameClient.Network
 {
+
+    //
+    // CLASS : TcpRequestResponseClient
+    // DESCRIPTION : Async TCP client that maintains a persistent connection to a server,
+    //               handling connect, send/receive, and disconnect operations with timeout support.
+    // PARAMETERS : n/a
+    // RETURNS : n/a
+    //
     public sealed class TcpRequestResponseClient : IDisposable
     {
         private TcpClient? tcpClient;
@@ -27,11 +35,23 @@ namespace WordGameClient.Network
         private bool isConnected;
         private bool isDisposed;
 
+        //
+        // PROPERTY : IsConnected
+        // DESCRIPTION : Returns the current connection status of the client.
+        // PARAMETERS : n/a
+        // RETURNS : bool - true if connected, false otherwise.
+        //
         public bool IsConnected
         {
             get { return (this.isConnected); }
         }
 
+        //
+        // FUNCTION : TcpRequestResponseClient (constructor)
+        // DESCRIPTION : Initializes a new instance of the client with default null values.
+        // PARAMETERS : n/a
+        // RETURNS : n/a
+        //
         public TcpRequestResponseClient()
         {
             this.tcpClient = null;
@@ -44,6 +64,15 @@ namespace WordGameClient.Network
             return;
         }
 
+        //
+        // FUNCTION : ConnectAsync
+        // DESCRIPTION : Attempts to establish a TCP connection to the server using the provided settings.
+        //               Implements both connection timeout and I/O timeout for the welcome message.
+        //               On success, reads and returns the server's welcome message.
+        // PARAMETERS : ClientSettings settings - validated client settings (IP, port, timeouts);
+        //              CancellationToken cancellationToken - token to cancel the operation.
+        // RETURNS : Task<NetworkResult> - result containing success flag, welcome line, or error message.
+        //
         public async Task<NetworkResult> ConnectAsync(ClientSettings settings, CancellationToken cancellationToken)
         {
             bool isSuccess = false;
@@ -115,6 +144,16 @@ namespace WordGameClient.Network
             return (result);
         }
 
+        //
+        // FUNCTION : SendAndReceiveAsync
+        // DESCRIPTION : Sends a request line to the server and waits for a response line.
+        //               Uses the configured I/O timeout for the read operation.
+        // PARAMETERS : ClientSettings settings - validated client settings (I/O timeout);
+        //              string requestLine - the line to send to the server;
+        //              CancellationToken cancellationToken - token to cancel the operation.
+        // RETURNS : Task<NetworkResult> - result containing success flag, response line, or error message.
+        //
+
         public async Task<NetworkResult> SendAndReceiveAsync(ClientSettings settings, string requestLine, CancellationToken cancellationToken)
         {
             bool isSuccess = false;
@@ -169,6 +208,13 @@ namespace WordGameClient.Network
             return (result);
         }
 
+        //
+        // FUNCTION : Disconnect
+        // DESCRIPTION : Closes the TCP connection and disposes of all associated resources.
+        //               Sets isConnected to false and nulls out references.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         public void Disconnect()
         {
             this.isConnected = false;
@@ -193,6 +239,12 @@ namespace WordGameClient.Network
             return;
         }
 
+        //
+        // FUNCTION : Dispose
+        // DESCRIPTION : IDisposable implementation. Calls Disconnect and marks the object as disposed.
+        // PARAMETERS : n/a
+        // RETURNS : void
+        //
         public void Dispose()
         {
             if (this.isDisposed == false)
