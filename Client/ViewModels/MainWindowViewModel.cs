@@ -6,14 +6,19 @@
 * DESCRIPTION     :
 *   ViewModel for the MainWindow UI
 *   Stores client-side UI state for the word game screen, including player name, puzzle string, guess word, feedback message, and found words list.
+*   Communicates with the server using a persistent TCP connection and the server's protocol commands.
 */
 
 
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using WordGameClient.Commands;
 using WordGameClient.Models;
 using WordGameClient.Network;
@@ -23,35 +28,50 @@ namespace WordGameClient.ViewModels
 {
     public sealed class MainWindowViewModel : ViewModelBase
     {
+        private const string HighScoreFilePath = "highscores.txt";
+        private const int IdleTimeoutSeconds = 120;
+        private const int IdleWarning60 = 60;
+        private const int IdleWarning30 = 30;
+        private static readonly Regex NameRegex = new Regex(@"^[A-Za-z][A-Za-z0-9 _\-]{1,29}$");
+        private static readonly Regex EmailRegex = new Regex(@"^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}$");
+
         private readonly ClientSettings? settings;
         private readonly TcpRequestResponseClient tcpClient;
+        private readonly DispatcherTimer? progressTimer;
+        private readonly DispatcherTimer? idleTimer;
 
         private string configurationErrorMessage;
         private string serverEndpointLabel;
 
         private string playerName;
-        private string sessionId;
+        private string playerEmail;
 
         private string puzzleString;
         private string guessWord;
 
         private string feedbackMessage;
         private int timeLeftSeconds;
-        private int choicesLeft;
+        private int wordsLeft;
+        private int triesUsed;
+        private int maxTries;
+        private int currentScore;
 
         private bool isBusy;
         private bool isGameActive;
+        private string connectionStatus;
+        private int highScore;
+        private int idleSecondsRemaining;
+        private bool idleWarning60Shown;
+        private bool idleWarning30Shown;
 
         public ObservableCollection<string> FoundWords { get; }
         public ObservableCollection<string> LogMessages { get; }
 
         public AsyncRelayCommand StartGameCommand { get; }
         public AsyncRelayCommand SubmitGuessCommand { get; }
-        public AsyncRelayCommand RefreshTimeLeftCommand { get; }
-        public AsyncRelayCommand RefreshChoicesLeftCommand { get; }
-        public AsyncRelayCommand CheckEndGameCommand { get; }
         public AsyncRelayCommand PlayAgainYesCommand { get; }
         public AsyncRelayCommand PlayAgainNoCommand { get; }
+        public AsyncRelayCommand DisconnectCommand { get; }
 
         public string ConfigurationErrorMessage
         {
@@ -84,7 +104,7 @@ namespace WordGameClient.ViewModels
         public string ServerEndpointLabel
         {
             get { return (this.serverEndpointLabel); }
-            private set
+            set
             {
                 this.serverEndpointLabel = value;
                 this.NotifyPropertyChanged();
@@ -99,6 +119,18 @@ namespace WordGameClient.ViewModels
             set
             {
                 this.playerName = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
+        public string PlayerEmail
+        {
+            get { return (this.playerEmail); }
+            set
+            {
+                this.playerEmail = value;
                 this.NotifyPropertyChanged();
 
                 return;
@@ -153,12 +185,48 @@ namespace WordGameClient.ViewModels
             }
         }
 
-        public int ChoicesLeft
+        public int WordsLeft
         {
-            get { return (this.choicesLeft); }
+            get { return (this.wordsLeft); }
             private set
             {
-                this.choicesLeft = value;
+                this.wordsLeft = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
+        public int TriesUsed
+        {
+            get { return (this.triesUsed); }
+            private set
+            {
+                this.triesUsed = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
+        public int MaxTries
+        {
+            get { return (this.maxTries); }
+            private set
+            {
+                this.maxTries = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
+        public int CurrentScore
+        {
+            get { return (this.currentScore); }
+            private set
+            {
+                this.currentScore = value;
                 this.NotifyPropertyChanged();
 
                 return;
@@ -177,6 +245,30 @@ namespace WordGameClient.ViewModels
             }
         }
 
+        public string ConnectionStatus
+        {
+            get { return (this.connectionStatus); }
+            set
+            {
+                this.connectionStatus = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
+        public int HighScore
+        {
+            get { return (this.highScore); }
+            private set
+            {
+                this.highScore = value;
+                this.NotifyPropertyChanged();
+
+                return;
+            }
+        }
+
         public MainWindowViewModel(ClientSettings? settings, string configurationErrorMessage)
         {
             this.settings = settings;
@@ -185,17 +277,25 @@ namespace WordGameClient.ViewModels
             this.configurationErrorMessage = configurationErrorMessage;
 
             this.playerName = string.Empty;
-            this.sessionId = "0";
+            this.playerEmail = string.Empty;
 
             this.puzzleString = string.Empty;
             this.guessWord = string.Empty;
 
             this.feedbackMessage = "Ready.";
             this.timeLeftSeconds = 0;
-            this.choicesLeft = 0;
+            this.wordsLeft = 0;
+            this.triesUsed = 0;
+            this.maxTries = 0;
+            this.currentScore = 0;
 
             this.isBusy = false;
             this.isGameActive = false;
+            this.connectionStatus = "NOT CONNECTED";
+            this.highScore = 0;
+            this.idleSecondsRemaining = 0;
+            this.idleWarning60Shown = false;
+            this.idleWarning30Shown = false;
 
             this.FoundWords = new ObservableCollection<string>();
             this.LogMessages = new ObservableCollection<string>();
@@ -211,14 +311,139 @@ namespace WordGameClient.ViewModels
 
             this.StartGameCommand = new AsyncRelayCommand(this.StartGameAsync, this.CanStartGame);
             this.SubmitGuessCommand = new AsyncRelayCommand(this.SubmitGuessAsync, this.CanSubmitGuess);
-            this.RefreshTimeLeftCommand = new AsyncRelayCommand(this.RefreshTimeLeftAsync, this.CanUseSession);
-            this.RefreshChoicesLeftCommand = new AsyncRelayCommand(this.RefreshChoicesLeftAsync, this.CanUseSession);
-            this.CheckEndGameCommand = new AsyncRelayCommand(this.CheckEndGameAsync, this.CanUseSession);
-
-            this.PlayAgainYesCommand = new AsyncRelayCommand(this.PlayAgainYesAsync, this.CanUseSession);
-            this.PlayAgainNoCommand = new AsyncRelayCommand(this.PlayAgainNoAsync, this.CanUseSession);
+            this.PlayAgainYesCommand = new AsyncRelayCommand(this.PlayAgainYesAsync, this.CanPlayAgain);
+            this.PlayAgainNoCommand = new AsyncRelayCommand(this.PlayAgainNoAsync, this.CanPlayAgain);
+            this.DisconnectCommand = new AsyncRelayCommand(this.DisconnectAsync, this.CanPlayAgain);
 
             this.ConfigurationErrorMessage = configurationErrorMessage;
+
+            this.progressTimer = new DispatcherTimer();
+            this.progressTimer.Interval = TimeSpan.FromSeconds(1);
+            this.progressTimer.Tick += this.OnProgressTimerTick;
+
+            this.idleTimer = new DispatcherTimer();
+            this.idleTimer.Interval = TimeSpan.FromSeconds(1);
+            this.idleTimer.Tick += this.OnIdleTimerTick;
+
+            return;
+        }
+
+        private async void OnProgressTimerTick(object? sender, EventArgs e)
+        {
+            if ((this.isGameActive == false) || (this.tcpClient.IsConnected == false) || (this.isBusy == true))
+            {
+                if (this.tcpClient.IsConnected == false)
+                {
+                    this.StopProgressTimer();
+                    this.isGameActive = false;
+                    this.ConnectionStatus = "NOT CONNECTED";
+                }
+                return;
+            }
+
+            await this.RefreshProgressAsync();
+
+            return;
+        }
+
+        private void StartProgressTimer()
+        {
+            this.progressTimer?.Start();
+
+            return;
+        }
+
+        private void StopProgressTimer()
+        {
+            this.progressTimer?.Stop();
+
+            return;
+        }
+
+        private void ShowGameOverPopup(string reason, int score)
+        {
+            this.StopIdleTimer();
+
+            string message = reason + "\n\nScore: " + score;
+
+            if (score > this.HighScore)
+            {
+                this.HighScore = score;
+                this.SaveHighScore(score);
+                message = message + "\n\nNEW HIGH SCORE!";
+            }
+
+            message = message + "\n\nWould you like to play again?";
+
+            MessageBoxResult result = MessageBox.Show(message, "Game Over", MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                this.PlayAgainYesCommand.Execute(null);
+            }
+            else
+            {
+                this.PlayAgainNoCommand.Execute(null);
+            }
+
+            return;
+        }
+
+        private void LoadHighScore()
+        {
+            try
+            {
+                if (File.Exists(HighScoreFilePath))
+                {
+                    string[] lines = File.ReadAllLines(HighScoreFilePath);
+
+                    if (lines.Length > 0)
+                    {
+                        // Format: Score|PlayerName|PlayerEmail
+                        string[] parts = lines[0].Split('|');
+
+                        if (parts.Length >= 1)
+                        {
+                            int parsed = 0;
+                            if (int.TryParse(parts[0], out parsed))
+                            {
+                                this.highScore = parsed;
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                this.highScore = 0;
+            }
+
+            return;
+        }
+
+        private void SaveHighScore(int score)
+        {
+            try
+            {
+                string playerId = Guid.NewGuid().ToString("N").Substring(0, 8);
+                string name = string.IsNullOrWhiteSpace(this.PlayerName) ? "Unknown" : this.PlayerName.Trim();
+                string email = string.IsNullOrWhiteSpace(this.PlayerEmail) ? "N/A" : this.PlayerEmail.Trim();
+                string line = score + "|" + name + "|" + playerId + "|" + email;
+
+                string existingContent = string.Empty;
+                if (File.Exists(HighScoreFilePath))
+                {
+                    existingContent = File.ReadAllText(HighScoreFilePath);
+                }
+
+                File.WriteAllText(HighScoreFilePath, line + Environment.NewLine + existingContent);
+
+                this.AddLog("High score saved: " + score + " by " + name);
+            }
+            catch (Exception ex)
+            {
+                this.AddLog("Failed to save high score: " + ex.Message);
+            }
 
             return;
         }
@@ -229,8 +454,7 @@ namespace WordGameClient.ViewModels
 
             if ((this.settings != null) &&
                 (string.IsNullOrWhiteSpace(this.ConfigurationErrorMessage) == true) &&
-                (this.IsBusy == false) &&
-                (string.IsNullOrWhiteSpace(this.PlayerName) == false))
+                (this.IsBusy == false))
             {
                 canStart = true;
             }
@@ -245,8 +469,7 @@ namespace WordGameClient.ViewModels
             if ((this.settings != null) &&
                 (this.IsBusy == false) &&
                 (this.isGameActive == true) &&
-                (string.IsNullOrWhiteSpace(this.sessionId) == false) &&
-                (this.sessionId != "0"))
+                (this.tcpClient.IsConnected == true))
             {
                 canUse = true;
             }
@@ -267,55 +490,24 @@ namespace WordGameClient.ViewModels
             return (canSubmit);
         }
 
+        private bool CanPlayAgain()
+        {
+            bool canPlay = false;
+
+            if ((this.settings != null) &&
+                (this.IsBusy == false))
+            {
+                canPlay = true;
+            }
+
+            return (canPlay);
+        }
+
         private void AddLog(string message)
         {
             this.LogMessages.Add(message);
 
             return;
-        }
-
-        private string BuildRequestLine(string command, string sessionIdValue, params string[] parts)
-        {
-            string line = command + ProtocolConstants.Delimiter + sessionIdValue;
-
-            int index = 0;
-
-            while (index < parts.Length)
-            {
-                line = line + ProtocolConstants.Delimiter + parts[index];
-                index++;
-            }
-
-            return (line);
-        }
-
-        private bool TryParseResponse(string responseLine, out bool isOk, out string[] tokens)
-        {
-            bool parsed = false;
-
-            isOk = false;
-            tokens = Array.Empty<string>();
-
-            if (string.IsNullOrWhiteSpace(responseLine) == false)
-            {
-                tokens = responseLine.Split(ProtocolConstants.Delimiter);
-
-                if (tokens.Length >= 1)
-                {
-                    if (tokens[0] == ProtocolConstants.Ok)
-                    {
-                        isOk = true;
-                        parsed = true;
-                    }
-                    else if (tokens[0] == ProtocolConstants.Err)
-                    {
-                        isOk = false;
-                        parsed = true;
-                    }
-                }
-            }
-
-            return (parsed);
         }
 
         private async Task<NetworkResult> SendAsync(string requestLine)
@@ -324,7 +516,7 @@ namespace WordGameClient.ViewModels
 
             if (this.settings != null)
             {
-                result = await this.tcpClient.SendOnceAsync(this.settings, requestLine, CancellationToken.None);
+                result = await this.tcpClient.SendAndReceiveAsync(this.settings, requestLine, CancellationToken.None);
             }
 
             return (result);
@@ -332,7 +524,38 @@ namespace WordGameClient.ViewModels
 
         private async Task StartGameAsync()
         {
+            // Validate mandatory fields
+            if (string.IsNullOrWhiteSpace(this.PlayerName))
+            {
+                this.FeedbackMessage = "Please enter your Player Name before starting.";
+                MessageBox.Show("Player Name is required.", "Missing Information", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (NameRegex.IsMatch(this.PlayerName.Trim()) == false)
+            {
+                this.FeedbackMessage = "Player Name must start with a letter and be 2-30 characters (letters, numbers, spaces, hyphens, underscores).";
+                MessageBox.Show("Player Name must start with a letter and be 2-30 characters long.\nAllowed: letters, numbers, spaces, hyphens, underscores.", "Invalid Name", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(this.PlayerEmail))
+            {
+                this.FeedbackMessage = "Please enter your Player Email before starting.";
+                MessageBox.Show("Player Email is required.", "Missing Information", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (EmailRegex.IsMatch(this.PlayerEmail.Trim()) == false)
+            {
+                this.FeedbackMessage = "Please enter a valid email address (e.g., player@example.com).";
+                MessageBox.Show("Please enter a valid email address.\nExample: player@example.com", "Invalid Email", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             this.IsBusy = true;
+            this.StopProgressTimer();
+            this.StopIdleTimer();
 
             bool started = false;
             string message = string.Empty;
@@ -340,122 +563,96 @@ namespace WordGameClient.ViewModels
             this.FoundWords.Clear();
             this.PuzzleString = string.Empty;
             this.TimeLeftSeconds = 0;
-            this.ChoicesLeft = 0;
-            this.sessionId = "0";
+            this.WordsLeft = 0;
+            this.TriesUsed = 0;
+            this.MaxTries = 0;
+            this.CurrentScore = 0;
             this.isGameActive = false;
 
             try
             {
-                // 1) check_for_new_player|0|username
-                string checkReq = this.BuildRequestLine(ProtocolCommands.CheckForNewPlayer, "0", this.PlayerName.Trim());
-                NetworkResult checkRes = await this.SendAsync(checkReq);
-
-                if (checkRes.IsSuccess == false)
+                if (this.settings == null)
                 {
-                    message = "Check player failed: " + checkRes.ErrorMessage;
+                    message = "Missing settings.";
                 }
                 else
                 {
-                    bool isOk;
-                    string[] tokens;
+                    // Connect if not already connected
+                    if (this.tcpClient.IsConnected == false)
+                    {
+                        this.tcpClient.Disconnect();
+                        NetworkResult connectRes = await this.tcpClient.ConnectAsync(this.settings, CancellationToken.None);
 
-                    if (this.TryParseResponse(checkRes.ResponseLine, out isOk, out tokens) == false)
-                    {
-                        message = "Invalid response (check player).";
-                    }
-                    else if (isOk == false)
-                    {
-                        message = "Server error (check player).";
-                        if (tokens.Length >= 2)
+                        if (connectRes.IsSuccess == false)
                         {
-                            message = "Server error: " + tokens[1];
-                        }
-                    }
-                    else
-                    {
-                        // Expect OK|AVAILABLE or OK|TAKEN
-                        if ((tokens.Length >= 2) && (tokens[1].ToUpperInvariant() == "TAKEN"))
-                        {
-                            message = "Username is already taken.";
+                            message = "Connection failed: " + connectRes.ErrorMessage;
                         }
                         else
                         {
-                            // 2) login_info|0|username  -> OK|sessionId
-                            string loginReq = this.BuildRequestLine(ProtocolCommands.LoginInfo, "0", this.PlayerName.Trim());
-                            NetworkResult loginRes = await this.SendAsync(loginReq);
+                            this.ConnectionStatus = "CONNECTED";
+                            this.AddLog("Connected to server.");
+                        }
+                    }
 
-                            if (loginRes.IsSuccess == false)
-                            {
-                                message = "Login failed: " + loginRes.ErrorMessage;
-                            }
-                            else
-                            {
-                                bool loginOk;
-                                string[] loginTokens;
+                    if (this.tcpClient.IsConnected == true)
+                    {
+                        // Send START|playerName|playerEmail -> expect GAMESTART|puzzle|wordCount|duration|maxGuesses
+                        string startCommand = ProtocolCommands.Start + ProtocolConstants.Delimiter + this.PlayerName.Trim() + ProtocolConstants.Delimiter + this.PlayerEmail.Trim();
+                        NetworkResult startRes = await this.SendAsync(startCommand);
 
-                                if (this.TryParseResponse(loginRes.ResponseLine, out loginOk, out loginTokens) == false)
+                        if (startRes.IsSuccess == false)
+                        {
+                            message = "Start game failed: " + startRes.ErrorMessage;
+                        }
+                        else
+                        {
+                            string[] tokens = startRes.ResponseLine.Split(ProtocolConstants.Delimiter);
+                            string responseType = tokens[0];
+
+                            if (responseType == ProtocolCommands.GameStart)
+                            {
+                                // GAMESTART|puzzleString|wordCount|duration|maxGuesses
+                                if (tokens.Length >= 4)
                                 {
-                                    message = "Invalid response (login).";
-                                }
-                                else if (loginOk == false)
-                                {
-                                    message = "Server error (login).";
-                                    if (loginTokens.Length >= 2)
+                                    this.PuzzleString = tokens[1];
+
+                                    int wordCount = 0;
+                                    if (int.TryParse(tokens[2], out wordCount) == true)
                                     {
-                                        message = "Server error: " + loginTokens[1];
+                                        this.WordsLeft = wordCount;
                                     }
-                                }
-                                else if (loginTokens.Length < 2)
-                                {
-                                    message = "Login response missing sessionId.";
+
+                                    int duration = 0;
+                                    if (int.TryParse(tokens[3], out duration) == true)
+                                    {
+                                        this.TimeLeftSeconds = duration;
+                                    }
+
+                                    if (tokens.Length >= 5)
+                                    {
+                                        int maxGuesses = 0;
+                                        if (int.TryParse(tokens[4], out maxGuesses) == true)
+                                        {
+                                            this.MaxTries = maxGuesses;
+                                        }
+                                    }
+
+                                    this.isGameActive = true;
+                                    started = true;
+                                    message = "Game started! Find " + wordCount + " words. You have " + this.MaxTries + " tries. Hidden and reversed words also count!";
                                 }
                                 else
                                 {
-                                    this.sessionId = loginTokens[1];
-                                    this.isGameActive = true;
-
-                                    // 3) get_string_from_server|sessionId -> OK|puzzle|wordCount
-                                    string puzzleReq = this.BuildRequestLine(ProtocolCommands.GetStringFromServer, this.sessionId);
-                                    NetworkResult puzzleRes = await this.SendAsync(puzzleReq);
-
-                                    if (puzzleRes.IsSuccess == false)
-                                    {
-                                        message = "Get puzzle failed: " + puzzleRes.ErrorMessage;
-                                    }
-                                    else
-                                    {
-                                        bool puzzleOk;
-                                        string[] puzzleTokens;
-
-                                        if (this.TryParseResponse(puzzleRes.ResponseLine, out puzzleOk, out puzzleTokens) == false)
-                                        {
-                                            message = "Invalid response (puzzle).";
-                                        }
-                                        else if (puzzleOk == false)
-                                        {
-                                            message = "Server error (puzzle).";
-                                            if (puzzleTokens.Length >= 2)
-                                            {
-                                                message = "Server error: " + puzzleTokens[1];
-                                            }
-                                        }
-                                        else if (puzzleTokens.Length < 2)
-                                        {
-                                            message = "Puzzle response missing puzzle string.";
-                                        }
-                                        else
-                                        {
-                                            this.PuzzleString = puzzleTokens[1];
-                                            message = "Game started. Enter a word.";
-
-                                            // optional: refresh stats
-                                            await this.RefreshTimeLeftAsync();
-                                            await this.RefreshChoicesLeftAsync();
-
-                                            started = true;
-                                        }
-                                    }
+                                    message = "Invalid GAMESTART response format.";
                                 }
+                            }
+                            else if (responseType == ProtocolCommands.Error)
+                            {
+                                message = "Server error: " + (tokens.Length >= 2 ? tokens[1] : "Unknown");
+                            }
+                            else
+                            {
+                                message = "Unexpected response: " + startRes.ResponseLine;
                             }
                         }
                     }
@@ -469,7 +666,14 @@ namespace WordGameClient.ViewModels
             if (started == false)
             {
                 this.isGameActive = false;
-                this.sessionId = "0";
+                if (this.tcpClient.IsConnected == false)
+                {
+                    this.ConnectionStatus = "NOT CONNECTED";
+                }
+            }
+            else
+            {
+                this.StartProgressTimer();
             }
 
             this.FeedbackMessage = message;
@@ -484,6 +688,9 @@ namespace WordGameClient.ViewModels
 
             string message = string.Empty;
             string cleaned = this.GuessWord.Trim();
+            bool gameEnded = false;
+            string gameOverReason = string.Empty;
+            int gameOverScore = 0;
 
             try
             {
@@ -493,56 +700,84 @@ namespace WordGameClient.ViewModels
                 }
                 else
                 {
-                    // word_validation|sessionId|word -> OK|FOUND/NOT_FOUND/ALREADY
-                    string req = this.BuildRequestLine(ProtocolCommands.WordValidation, this.sessionId, cleaned);
+                    string req = ProtocolCommands.Guess + ProtocolConstants.Delimiter + cleaned;
                     NetworkResult res = await this.SendAsync(req);
 
                     if (res.IsSuccess == false)
                     {
-                        message = "Validation failed: " + res.ErrorMessage;
+                        message = "Guess failed: " + res.ErrorMessage;
+                        this.isGameActive = false;
+                        this.StopProgressTimer();
+                        this.ConnectionStatus = "NOT CONNECTED";
                     }
                     else
                     {
-                        bool ok;
-                        string[] tokens;
+                        string responseLine = res.ResponseLine;
 
-                        if (this.TryParseResponse(res.ResponseLine, out ok, out tokens) == false)
+                        if (responseLine.StartsWith(ProtocolCommands.WordFound))
                         {
-                            message = "Invalid response (validation).";
-                        }
-                        else if (ok == false)
-                        {
-                            message = "Server error (validation).";
-                            if (tokens.Length >= 2)
+                            string[] tokens = responseLine.Split(ProtocolConstants.Delimiter);
+                            string foundWord = (tokens.Length >= 2) ? tokens[1] : cleaned;
+                            this.FoundWords.Add(foundWord);
+                            message = "FOUND: " + foundWord;
+
+                            if (tokens.Length >= 4)
                             {
-                                message = "Server error: " + tokens[1];
+                                int foundCount = 0;
+                                int totalWords = 0;
+                                int.TryParse(tokens[2], out foundCount);
+                                int.TryParse(tokens[3], out totalWords);
+                                this.WordsLeft = totalWords - foundCount;
                             }
                         }
-                        else if (tokens.Length < 2)
+                        else if (responseLine.StartsWith(ProtocolCommands.WordAlreadyExist))
                         {
-                            message = "Validation response missing status.";
+                            message = "Already submitted: " + cleaned;
+                        }
+                        else if (responseLine.StartsWith(ProtocolCommands.WordDoesNotExist))
+                        {
+                            message = "Not found: " + cleaned;
+                        }
+                        else if (responseLine.StartsWith(ProtocolCommands.GameOver))
+                        {
+                            string[] tokens = responseLine.Split(ProtocolConstants.Delimiter);
+                            gameOverReason = (tokens.Length >= 2) ? tokens[1] : "Game over";
+                            message = "GAME OVER: " + gameOverReason;
+                            this.isGameActive = false;
+                            this.StopProgressTimer();
+                            gameEnded = true;
+
+                            // If all words found, set words left to 0
+                            if (gameOverReason.Contains("ALL WORDS FOUND"))
+                            {
+                                this.WordsLeft = 0;
+                            }
+
+                            // Parse score from server response (e.g. "ALL WORDS FOUND! Score: 894")
+                            gameOverScore = this.CurrentScore;
+                            foreach (string token in tokens)
+                            {
+                                int scoreIdx = token.IndexOf("Score:");
+                                if (scoreIdx >= 0)
+                                {
+                                    string scoreStr = token.Substring(scoreIdx + 6).Trim();
+                                    int parsedScore = 0;
+                                    if (int.TryParse(scoreStr, out parsedScore))
+                                    {
+                                        gameOverScore = parsedScore;
+                                        this.CurrentScore = parsedScore;
+                                    }
+                                }
+                            }
+                        }
+                        else if (responseLine.StartsWith(ProtocolCommands.Error))
+                        {
+                            string[] tokens = responseLine.Split(ProtocolConstants.Delimiter);
+                            message = "Server error: " + ((tokens.Length >= 2) ? tokens[1] : "Unknown");
                         }
                         else
                         {
-                            string status = tokens[1].ToUpperInvariant();
-
-                            if (status == "FOUND")
-                            {
-                                this.FoundWords.Add(cleaned);
-                                message = "FOUND: " + cleaned;
-                            }
-                            else if (status == "ALREADY")
-                            {
-                                message = "Already submitted: " + cleaned;
-                            }
-                            else
-                            {
-                                message = "Not found: " + cleaned;
-                            }
-
-                            await this.RefreshTimeLeftAsync();
-                            await this.RefreshChoicesLeftAsync();
-                            await this.CheckEndGameAsync();
+                            message = "Unexpected response: " + responseLine;
                         }
                     }
                 }
@@ -556,112 +791,105 @@ namespace WordGameClient.ViewModels
             this.FeedbackMessage = message;
             this.AddLog(message);
 
-            return;
-        }
-
-        private async Task RefreshTimeLeftAsync()
-        {
-            string message = string.Empty;
-
-            if (this.settings != null)
+            if (gameEnded == true)
             {
-                string req = this.BuildRequestLine(ProtocolCommands.TimeLeft, this.sessionId);
-                NetworkResult res = await this.SendAsync(req);
-
-                if (res.IsSuccess == true)
-                {
-                    bool ok;
-                    string[] tokens;
-
-                    if (this.TryParseResponse(res.ResponseLine, out ok, out tokens) == true)
-                    {
-                        if ((ok == true) && (tokens.Length >= 2))
-                        {
-                            int parsed = 0;
-
-                            if (int.TryParse(tokens[1], out parsed) == true)
-                            {
-                                this.TimeLeftSeconds = parsed;
-                            }
-                        }
-                        else if ((ok == false) && (tokens.Length >= 2))
-                        {
-                            message = "Time left error: " + tokens[1];
-                            this.AddLog(message);
-                        }
-                    }
-                }
+                this.ShowGameOverPopup(gameOverReason, gameOverScore);
             }
 
             return;
         }
 
-        private async Task RefreshChoicesLeftAsync()
+        private async Task RefreshProgressAsync()
         {
-            string message = string.Empty;
-
-            if (this.settings != null)
+            if ((this.settings == null) || (this.tcpClient.IsConnected == false))
             {
-                string req = this.BuildRequestLine(ProtocolCommands.ChoicesLeft, this.sessionId);
-                NetworkResult res = await this.SendAsync(req);
-
-                if (res.IsSuccess == true)
-                {
-                    bool ok;
-                    string[] tokens;
-
-                    if (this.TryParseResponse(res.ResponseLine, out ok, out tokens) == true)
-                    {
-                        if ((ok == true) && (tokens.Length >= 2))
-                        {
-                            int parsed = 0;
-
-                            if (int.TryParse(tokens[1], out parsed) == true)
-                            {
-                                this.ChoicesLeft = parsed;
-                            }
-                        }
-                        else if ((ok == false) && (tokens.Length >= 2))
-                        {
-                            message = "Choices left error: " + tokens[1];
-                            this.AddLog(message);
-                        }
-                    }
-                }
+                this.StopProgressTimer();
+                this.isGameActive = false;
+                this.ConnectionStatus = "NOT CONNECTED";
+                return;
             }
 
-            return;
-        }
+            NetworkResult res = await this.SendAsync(ProtocolCommands.Progress);
 
-        private async Task CheckEndGameAsync()
-        {
-            string message = string.Empty;
-
-            if (this.settings != null)
+            if (res.IsSuccess == true)
             {
-                string req = this.BuildRequestLine(ProtocolCommands.CheckEndGame, this.sessionId);
-                NetworkResult res = await this.SendAsync(req);
+                string[] tokens = res.ResponseLine.Split(ProtocolConstants.Delimiter);
 
-                if (res.IsSuccess == true)
+                // PROGRESS|foundCount|totalWords|remainingSeconds|guessCount|score|maxGuesses
+                if ((tokens.Length >= 5) && (tokens[0] == ProtocolCommands.ProgressUpdate))
                 {
-                    bool ok;
-                    string[] tokens;
+                    int foundCount = 0;
+                    int totalWords = 0;
+                    int remainingSeconds = 0;
+                    int guessCount = 0;
+                    int score = 0;
+                    int maxGuesses = 0;
 
-                    if (this.TryParseResponse(res.ResponseLine, out ok, out tokens) == true)
+                    int.TryParse(tokens[1], out foundCount);
+                    int.TryParse(tokens[2], out totalWords);
+                    int.TryParse(tokens[3], out remainingSeconds);
+                    int.TryParse(tokens[4], out guessCount);
+
+                    if (tokens.Length >= 6)
                     {
-                        if ((ok == true) && (tokens.Length >= 2))
-                        {
-                            string status = tokens[1].ToUpperInvariant();
+                        int.TryParse(tokens[5], out score);
+                    }
+                    if (tokens.Length >= 7)
+                    {
+                        int.TryParse(tokens[6], out maxGuesses);
+                    }
 
-                            if (status == "ENDED")
-                            {
-                                message = "Game ended. Choose Play Again YES/NO.";
-                                this.FeedbackMessage = message;
-                                this.AddLog(message);
-                            }
-                        }
+                    this.TimeLeftSeconds = remainingSeconds;
+                    this.WordsLeft = totalWords - foundCount;
+                    this.TriesUsed = guessCount;
+                    this.CurrentScore = score;
+
+                    if (maxGuesses > 0)
+                    {
+                        this.MaxTries = maxGuesses;
+                    }
+
+                    // Auto detect game over: time expired
+                    if (remainingSeconds <= 0)
+                    {
+                        this.isGameActive = false;
+                        this.StopProgressTimer();
+                        this.FeedbackMessage = "GAME OVER: Time expired!";
+                        this.AddLog("GAME OVER: Time expired!");
+                        this.ShowGameOverPopup("Time expired!", score);
+                    }
+                    // Auto detect game over: all words found
+                    else if (foundCount >= totalWords)
+                    {
+                        this.isGameActive = false;
+                        this.StopProgressTimer();
+                        this.FeedbackMessage = "GAME OVER: All words found!";
+                        this.AddLog("GAME OVER: All words found!");
+                        this.ShowGameOverPopup("All words found!", score);
+                    }
+                    // Auto detect game over: out of tries
+                    else if ((maxGuesses > 0) && (guessCount >= maxGuesses))
+                    {
+                        this.isGameActive = false;
+                        this.StopProgressTimer();
+                        this.FeedbackMessage = "GAME OVER: Out of tries!";
+                        this.AddLog("GAME OVER: Out of tries!");
+                        this.ShowGameOverPopup("Out of tries!", score);
                     }
                 }
+                else if ((tokens.Length >= 1) && (tokens[0] == ProtocolCommands.Error))
+                {
+                    string errorMsg = (tokens.Length >= 2) ? tokens[1] : "Unknown error";
+                    this.AddLog("Progress error: " + errorMsg);
+                    this.StopProgressTimer();
+                    this.isGameActive = false;
+                }
+            }
+            else
+            {
+                this.StopProgressTimer();
+                this.isGameActive = false;
+                this.ConnectionStatus = "NOT CONNECTED";
             }
 
             return;
@@ -669,27 +897,26 @@ namespace WordGameClient.ViewModels
 
         private async Task PlayAgainYesAsync()
         {
+            this.StopProgressTimer();
+            this.StopIdleTimer();
+            this.isGameActive = false;
+
+            await this.StartGameAsync();
+
+            return;
+        }
+
+        private async Task PlayAgainNoAsync()
+        {
             this.IsBusy = true;
+            this.StopProgressTimer();
 
             string message = string.Empty;
 
             try
             {
-                // check_new_game|sessionId|YES
-                string req = this.BuildRequestLine(ProtocolCommands.CheckNewGame, this.sessionId, "YES");
-                NetworkResult res = await this.SendAsync(req);
-
-                if (res.IsSuccess == false)
-                {
-                    message = "New game failed: " + res.ErrorMessage;
-                }
-                else
-                {
-                    message = "Requested new game.";
-                }
-
-                // Re-run start flow (same username)
-                await this.StartGameAsync();
+                this.isGameActive = false;
+                message = "Game ended. Still connected to server.";
             }
             finally
             {
@@ -699,32 +926,95 @@ namespace WordGameClient.ViewModels
             this.FeedbackMessage = message;
             this.AddLog(message);
 
+            // Start idle timer since game ended but still connected
+            this.StartIdleTimer();
+
             return;
         }
 
-        private async Task PlayAgainNoAsync()
+        private void OnIdleTimerTick(object? sender, EventArgs e)
+        {
+            if (this.tcpClient.IsConnected == false)
+            {
+                this.StopIdleTimer();
+                this.ConnectionStatus = "NOT CONNECTED";
+                return;
+            }
+
+            this.idleSecondsRemaining--;
+
+            if ((this.idleSecondsRemaining <= IdleWarning60) && (this.idleWarning60Shown == false))
+            {
+                this.idleWarning60Shown = true;
+                this.AddLog("WARNING: Auto-disconnect in 60 seconds due to inactivity.");
+            }
+
+            if ((this.idleSecondsRemaining <= IdleWarning30) && (this.idleWarning30Shown == false))
+            {
+                this.idleWarning30Shown = true;
+                this.AddLog("WARNING: Auto-disconnect in 30 seconds due to inactivity.");
+            }
+
+            if (this.idleSecondsRemaining <= 0)
+            {
+                this.StopIdleTimer();
+                this.AddLog("Auto-disconnected from server due to inactivity.");
+                this.tcpClient.Disconnect();
+                this.ConnectionStatus = "NOT CONNECTED";
+                this.FeedbackMessage = "Disconnected due to inactivity.";
+            }
+
+            return;
+        }
+
+        private void StartIdleTimer()
+        {
+            this.idleSecondsRemaining = IdleTimeoutSeconds;
+            this.idleWarning60Shown = false;
+            this.idleWarning30Shown = false;
+            this.idleTimer?.Start();
+
+            return;
+        }
+
+        private void StopIdleTimer()
+        {
+            this.idleTimer?.Stop();
+
+            return;
+        }
+
+        public async Task DisconnectAsync()
         {
             this.IsBusy = true;
+            this.StopProgressTimer();
+            this.StopIdleTimer();
 
             string message = string.Empty;
 
             try
             {
-                // check_new_game|sessionId|NO
-                string req = this.BuildRequestLine(ProtocolCommands.CheckNewGame, this.sessionId, "NO");
-                NetworkResult res = await this.SendAsync(req);
-
-                if (res.IsSuccess == false)
+                if (this.tcpClient.IsConnected == true)
                 {
-                    message = "End session failed: " + res.ErrorMessage;
+                    NetworkResult res = await this.SendAsync(ProtocolCommands.Quit);
+
+                    if (res.IsSuccess == true)
+                    {
+                        message = "Disconnected from server.";
+                    }
+                    else
+                    {
+                        message = "Disconnect error: " + res.ErrorMessage;
+                    }
                 }
                 else
                 {
-                    message = "Session ended.";
+                    message = "Already disconnected.";
                 }
 
+                this.tcpClient.Disconnect();
                 this.isGameActive = false;
-                this.sessionId = "0";
+                this.ConnectionStatus = "NOT CONNECTED";
             }
             finally
             {

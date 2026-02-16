@@ -28,12 +28,15 @@ namespace WordGameServer.Game
         public static readonly int GameDurationSeconds;
         private static readonly int BasePointsPerWord;
         private static readonly int TimeBonusMultiplier;
+        public static readonly int MaxGuesses;
+        private static readonly int WrongGuessPenalty;
 
         private readonly GameData gameData;
         private readonly HashSet<string> foundWords;
         private readonly GameTimer gameTimer;
         private readonly object sessionLock;
         private int guessCount;
+        private int foundCount;
         private GameStatus status;
 
         //
@@ -101,9 +104,13 @@ namespace WordGameServer.Game
             string? durationValue = ConfigurationManager.AppSettings[ConfigKeys.GameDurationSeconds];
             string? basePointsValue = ConfigurationManager.AppSettings[ConfigKeys.BasePointsPerWord];
             string? bonusMultiplierValue = ConfigurationManager.AppSettings[ConfigKeys.TimeBonusMultiplier];
+            string? maxGuessesValue = ConfigurationManager.AppSettings[ConfigKeys.MaxGuesses];
+            string? penaltyValue = ConfigurationManager.AppSettings[ConfigKeys.WrongGuessPenalty];
             int parsedDuration = 0;
             int parsedPoints = 0;
             int parsedMultiplier = 0;
+            int parsedMaxGuesses = 0;
+            int parsedPenalty = 0;
 
             if (int.TryParse(durationValue, out parsedDuration) && parsedDuration >= GameConstants.MinGameDuration)
             {
@@ -132,6 +139,24 @@ namespace WordGameServer.Game
                 TimeBonusMultiplier = GameConstants.DefaultTimeBonusMultiplier;
             }
 
+            if (int.TryParse(maxGuessesValue, out parsedMaxGuesses) && parsedMaxGuesses >= GameConstants.MinMaxGuesses)
+            {
+                MaxGuesses = parsedMaxGuesses;
+            }
+            else
+            {
+                MaxGuesses = GameConstants.DefaultMaxGuesses;
+            }
+
+            if (int.TryParse(penaltyValue, out parsedPenalty) && parsedPenalty >= GameConstants.MinWrongGuessPenalty)
+            {
+                WrongGuessPenalty = parsedPenalty;
+            }
+            else
+            {
+                WrongGuessPenalty = GameConstants.DefaultWrongGuessPenalty;
+            }
+
             return;
         }
 
@@ -151,6 +176,7 @@ namespace WordGameServer.Game
             this.gameTimer = new GameTimer(GameDurationSeconds);
             this.sessionLock = new object();
             this.guessCount = 0;
+            this.foundCount = 0;
             this.status = GameStatus.Active;
 
             return;
@@ -171,8 +197,6 @@ namespace WordGameServer.Game
 
             lock (this.sessionLock)
             {
-                this.guessCount++;
-
                 if (this.gameTimer.IsExpired())
                 {
                     result = GuessResult.TimeExpired;
@@ -181,6 +205,7 @@ namespace WordGameServer.Game
 
                 if (string.IsNullOrWhiteSpace(word))
                 {
+                    this.guessCount++;
                     result = GuessResult.NotFound;
                     return result;
                 }
@@ -196,10 +221,13 @@ namespace WordGameServer.Game
                 if (this.gameData.IsValidWord(normalizedWord))
                 {
                     this.foundWords.Add(normalizedWord);
+                    this.foundCount++;
                     result = GuessResult.Found;
                     return result;
                 }
 
+                // Only count incorrect guesses toward the tries limit
+                this.guessCount++;
                 result = GuessResult.NotFound;
             }
 
@@ -224,14 +252,10 @@ namespace WordGameServer.Game
         public bool IsGameComplete()
         {
             bool isComplete = false;
-            int foundCount = 0;
-            int totalWords = 0;
 
             lock (this.sessionLock)
             {
-                foundCount = this.foundWords.Count;
-                totalWords = this.gameData.WordCount;
-                isComplete = foundCount >= totalWords;
+                isComplete = this.foundCount >= this.gameData.WordCount;
             }
 
             return isComplete;
@@ -252,7 +276,7 @@ namespace WordGameServer.Game
 
             lock (this.sessionLock)
             {
-                count = this.foundWords.Count;
+                count = this.foundCount;
             }
 
             return count;
@@ -287,13 +311,13 @@ namespace WordGameServer.Game
             int totalScore = 0;
             int baseScore = 0;
             int timeBonus = 0;
+            int wrongPenalty = 0;
             int remainingSeconds = 0;
-            int foundCount = 0;
 
             lock (this.sessionLock)
             {
-                foundCount = this.foundWords.Count;
-                baseScore = foundCount * BasePointsPerWord;
+                baseScore = this.foundCount * BasePointsPerWord;
+                wrongPenalty = this.guessCount * WrongGuessPenalty;
 
                 if (this.IsGameComplete() && !this.IsGameOver())
                 {
@@ -301,7 +325,12 @@ namespace WordGameServer.Game
                     timeBonus = remainingSeconds * TimeBonusMultiplier;
                 }
 
-                totalScore = baseScore + timeBonus;
+                totalScore = baseScore + timeBonus - wrongPenalty;
+
+                if (totalScore < 0)
+                {
+                    totalScore = 0;
+                }
             }
 
             return totalScore;
@@ -322,5 +351,16 @@ namespace WordGameServer.Game
             return remaining;
         }
 
+        public bool IsOutOfTries()
+        {
+            bool outOfTries = false;
+
+            lock (this.sessionLock)
+            {
+                outOfTries = this.guessCount >= MaxGuesses;
+            }
+
+            return outOfTries;
+        }
     }
 }

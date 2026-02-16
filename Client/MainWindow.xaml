@@ -5,17 +5,20 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WordGameClient"
         mc:Ignorable="d"
-        Title="Word Game Client" Height="640" Width="980">
+        Title="Word Game Client" Height="893" Width="1115"
+        Closing="Window_Closing">
     <DockPanel>
         <!-- Navigation Bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_New Game" Command="{Binding StartGameCommand}"/>
+                <MenuItem Header="_Play Again" Command="{Binding PlayAgainYesCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Disconnect" Command="{Binding DisconnectCommand}"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="ExitMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="_Settings">
-                <MenuItem Header="_User Settings" Click="UserSettingsMenuItem_Click"/>
                 <MenuItem Header="_Connection" Click="ConnectionMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="_About">
@@ -33,7 +36,21 @@
 
             <Border Grid.Row="0" Padding="12" BorderThickness="1" CornerRadius="8">
                 <StackPanel>
-                    <TextBlock FontWeight="SemiBold" Text="{Binding ServerEndpointLabel}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontWeight="SemiBold" Text="{Binding ServerEndpointLabel}"/>
+                        <TextBlock Margin="16,0,0,0" FontWeight="Bold" Text="{Binding ConnectionStatus}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="Red"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding ConnectionStatus}" Value="CONNECTED">
+                                            <Setter Property="Foreground" Value="Green"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
                     <TextBlock Foreground="DarkRed"
                                Visibility="{Binding ConfigurationErrorVisibility}"
                                Text="{Binding ConfigurationErrorMessage}"/>
@@ -49,7 +66,10 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="Player Name:" FontWeight="SemiBold"/>
-                        <TextBox Margin="0,6,0,12" Text="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBox Margin="0,6,0,6" Text="{Binding PlayerName, UpdateSourceTrigger=PropertyChanged}"/>
+
+                        <TextBlock Text="Player Email:" FontWeight="SemiBold"/>
+                        <TextBox Margin="0,6,0,12" Text="{Binding PlayerEmail, UpdateSourceTrigger=PropertyChanged}"/>
 
                         <Button Height="32" Width="160" Content="Start Game"
                                 Command="{Binding StartGameCommand}"/>
@@ -65,7 +85,9 @@
 
                         <TextBlock Text="Guess Word:" FontWeight="SemiBold"/>
                         <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <TextBox Width="260" Text="{Binding GuessWord, UpdateSourceTrigger=PropertyChanged}"/>
+                            <TextBox x:Name="GuessWordTextBox" Width="260"
+                                     Text="{Binding GuessWord, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="GuessWordTextBox_KeyDown"/>
                             <Button Width="140" Margin="10,0,0,0" Content="Submit Guess"
                                     Command="{Binding SubmitGuessCommand}"/>
                         </StackPanel>
@@ -74,27 +96,25 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" Margin="18,0,0,0">
+                        <TextBlock Text="High Score:" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,4,0,12" FontSize="18" Foreground="DarkGoldenrod"
+                                   Text="{Binding HighScore}"/>
+
+                        <TextBlock Text="Current Score:" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,4,0,12" FontSize="18" Foreground="DarkBlue"
+                                   Text="{Binding CurrentScore}"/>
+
                         <TextBlock Text="Time Left (sec):" FontWeight="SemiBold"/>
                         <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding TimeLeftSeconds}"/>
 
-                        <TextBlock Text="Choices Left:" FontWeight="SemiBold"/>
-                        <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding ChoicesLeft}"/>
+                        <TextBlock Text="# Of Words Left:" FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,4,0,12" FontSize="18" Text="{Binding WordsLeft}"/>
 
-                        <Button Height="30" Margin="0,0,0,8" Content="Refresh Time"
-                                Command="{Binding RefreshTimeLeftCommand}"/>
-                        <Button Height="30" Margin="0,0,0,8" Content="Refresh Choices"
-                                Command="{Binding RefreshChoicesLeftCommand}"/>
-                        <Button Height="30" Margin="0,0,0,8" Content="Check End Game"
-                                Command="{Binding CheckEndGameCommand}"/>
-
-                        <Separator Margin="0,12,0,12"/>
-
-                        <TextBlock Text="Play Again?" FontWeight="SemiBold"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Width="80" Margin="0,0,10,0" Content="YES"
-                                    Command="{Binding PlayAgainYesCommand}"/>
-                            <Button Width="80" Content="NO"
-                                    Command="{Binding PlayAgainNoCommand}"/>
+                        <TextBlock Text="# Of Wrong Tries:" FontWeight="SemiBold"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,12">
+                            <TextBlock FontSize="18" Text="{Binding TriesUsed}"/>
+                            <TextBlock FontSize="18" Text=" / "/>
+                            <TextBlock FontSize="18" Text="{Binding MaxTries}"/>
                         </StackPanel>
 
                         <Separator Margin="0,12,0,12"/>

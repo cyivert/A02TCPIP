@@ -12,7 +12,5 @@ namespace WordGameClient.Protocol
     public static class ProtocolConstants
     {
         public const char Delimiter = '|';
-        public const string Ok = "OK";
-        public const string Err = "ERR";
     }
 }

@@ -19,32 +19,31 @@ namespace WordGameServer.Data
     //
     // CLASS : GameDataLoader
     // DESCRIPTION :
-    // This static class is responsible for loading and validating game data files from a specified directory.
-    // It provides methods to validate the files, load valid game data into memory, and retrieve a random game for gameplay.
-    // The loader ensures that all game data files adhere to the required format and logs any errors encountered during the loading process for easier debugging and maintenance.
+    // This static class is responsible for loading and validating the game data file.
+    // It provides methods to validate the file, load valid game data into memory, and retrieve the game for gameplay.
+    // The loader ensures that the game data file adheres to the required format and logs any errors encountered during the loading process for easier debugging and maintenance.
     // PARAMETERS : n/a
     // RETURNS : n/a
     //
     public static class GameDataLoader
     {
-        private static readonly Random random = new Random();
-        private static readonly string dataDirectory;
-        private static readonly List<GameData> loadedGames;
+        private static readonly string gameDataFile;
+        private static GameData? loadedGame;
         private static readonly object loaderLock = new object();
 
         //
         // CONSTRUCTOR : GameDataLoader
         // DESCRIPTION : This static constructor initializes the GameDataLoader class by reading the
-        // game data directory from the application configuration and setting up the list to hold loaded game data.
-        // It ensures that the loader is ready to validate and load game files when requested.
+        // game data file path from the application configuration.
+        // It ensures that the loader is ready to validate and load the game file when requested.
         // PARAMETERS : n/a
         // RETURNS : n/a
         //
         static GameDataLoader()
         {
-            string? configDirectory = ConfigurationManager.AppSettings[ConfigKeys.GameDataDirectory];
-            dataDirectory = string.IsNullOrWhiteSpace(configDirectory) ? "GameData" : configDirectory;
-            loadedGames = new List<GameData>();
+            string? configFile = ConfigurationManager.AppSettings[ConfigKeys.GameDataFile];
+            gameDataFile = string.IsNullOrWhiteSpace(configFile) ? "game.txt" : configFile;
+            loadedGame = null;
             
             return;
         }
@@ -52,56 +51,40 @@ namespace WordGameServer.Data
         //
         // METHOD : ValidateAndLoadFiles
         // DESCRIPTION :
-        // This method validates and loads game data files from the configured directory.
-        // It checks for the existence of the directory, reads all files matching the pattern "game*.txt",
-        // and attempts to load each file as a GameData object. Valid files are added to the loadedGames list, while any errors
-        // encountered during loading are logged with detailed messages. The method returns the count of valid game files successfully loaded.
+        // This method validates and loads the game data file specified in the configuration.
+        // It checks for the existence of the file, reads and validates its contents,
+        // and loads it as a GameData object. If any errors are encountered, they are logged with detailed messages.
+        // The method returns 1 if the file was successfully loaded, 0 otherwise.
         // PARAMETERS : 
         // Logger logger - The Logger instance used for logging messages, warnings, and errors during the validation and loading process.
         // RETURNS :
-        // validCount - The number of valid game files that were successfully loaded into memory.
+        // validCount - The number of valid game files that were successfully loaded into memory (0 or 1).
         //
         public static int ValidateAndLoadFiles(Logger logger)
         {
             int validCount = 0;
-            string[]? allFiles = null;
-            GameData? gameData = null;
             
             lock (loaderLock)
             {
-                loadedGames.Clear();
+                loadedGame = null;
 
-                if (!Directory.Exists(dataDirectory))
+                if (!File.Exists(gameDataFile))
                 {
-                    logger.LogError($"Game data directory not found: {dataDirectory}");
+                    logger.LogError($"Game data file not found: {gameDataFile}");
                     validCount = 0;
                     return validCount;
                 }
 
                 try
                 {
-                    allFiles = Directory.GetFiles(dataDirectory, "game*.txt");
+                    loadedGame = LoadAndValidateGameFile(gameDataFile, logger);
+                    validCount = 1;
+                    logger.LogMessage($"Loaded: {Path.GetFileName(gameDataFile)}");
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError($"Failed to read game data directory: {ex.Message}");
+                    logger.LogWarning($"Rejected: {Path.GetFileName(gameDataFile)} - {ex.Message}");
                     validCount = 0;
-                    return validCount;
-                }
-
-                foreach (string filePath in allFiles)
-                {
-                    try
-                    {
-                        gameData = LoadAndValidateGameFile(filePath, logger);
-                        loadedGames.Add(gameData);
-                        validCount++;
-                        logger.LogMessage($"Loaded: {Path.GetFileName(filePath)}");
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning($"Rejected: {Path.GetFileName(filePath)} - {ex.Message}");
-                    }
                 }
             }
 
@@ -110,27 +93,24 @@ namespace WordGameServer.Data
 
         //
         // METHOD : LoadRandomGame
-        // DESCRIPTION : This method retrieves a random GameData object from the list of loaded games.
-        // It ensures thread safety by locking access to the loadedGames list while selecting a random game. If no games are loaded, it throws an InvalidOperationException.
-        // The method returns the selected GameData object for use in gameplay.
+        // DESCRIPTION : This method retrieves the loaded GameData object.
+        // It ensures thread safety by locking access while returning the game. If no game is loaded, it throws an InvalidOperationException.
         // PARAMETERS : n/a
         // RETURNS : 
-        // GameData - A randomly selected GameData object from the loaded games list.
+        // GameData - The loaded GameData object for use in gameplay.
         //
         public static GameData LoadRandomGame()
         {
             GameData? selectedGame = null;
-            int randomIndex = 0;
             
             lock (loaderLock)
             {
-                if (loadedGames.Count == 0)
+                if (loadedGame == null)
                 {
-                    throw new InvalidOperationException("No games loaded");
+                    throw new InvalidOperationException("No game loaded");
                 }
 
-                randomIndex = random.Next(loadedGames.Count);
-                selectedGame = loadedGames[randomIndex];
+                selectedGame = loadedGame;
             }
             
             return selectedGame!;

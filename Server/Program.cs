@@ -30,15 +30,17 @@ namespace WordGameServer
     //
     class Program
     {
-        private static CancellationTokenSource? cancellationTokenSource;                             // CancellationTokenSource to manage graceful shutdown of the server and its components.
+        // CancellationTokenSource to manage graceful shutdown of the server and its components.
+        private static CancellationTokenSource? cancellationTokenSource;
         static async Task Main(string[] args)
         {
             Console.Title = "Word Game Server";
             Console.WriteLine("=================================");
-            Console.WriteLine("   WORD GAME SERVER - A02");
+            Console.WriteLine("   WORD GAME SERVER  ");
             Console.WriteLine("=================================");
             Console.WriteLine();
 
+            // Initialize variables for server, logger, and configuration values.
             GameServer? server = null;
             Logger? logger = null;
             IPAddress? serverIP = null;
@@ -46,8 +48,10 @@ namespace WordGameServer
             string? ipValue = string.Empty;
             string? portValue = string.Empty;
 
+            // Initialize the cancellation token source for managing shutdown signals.
             cancellationTokenSource = new CancellationTokenSource();
 
+            // Main execution block wrapped in a try-catch to handle any unexpected exceptions and ensure proper logging and resource cleanup.
             try
             {
                 logger = new Logger();
@@ -68,18 +72,20 @@ namespace WordGameServer
                 }
 
                 // Validate game data files before starting server
-                logger.LogMessage("Validating game data files...");
+                logger.LogMessage("Validating game data file...");
                 int validFileCount = GameDataLoader.ValidateAndLoadFiles(logger);
-                logger.LogMessage($"Successfully loaded {validFileCount} valid game file(s)");
-                Console.WriteLine();
 
                 if (validFileCount == 0)
                 {
-                    logger.LogError("No valid game files found. Server cannot start.");
+                    logger.LogError("No valid game file found. Server cannot start.");
+                    logger.LogError("Ensure the game data file (configured in App.config as 'GameDataFile') exists alongside the executable.");
                     Console.WriteLine("Press any key to exit...");
                     Console.ReadKey();
                     return;
                 }
+
+                logger.LogMessage($"Successfully loaded {validFileCount} valid game file(s)");
+                Console.WriteLine();
 
                 // Initialize and start the server
                 server = new GameServer(serverIP, serverPort, logger);
@@ -111,6 +117,7 @@ namespace WordGameServer
                     await server.StopAsync();
                 }
 
+                logger?.Dispose();
                 cancellationTokenSource?.Dispose();
             }
 

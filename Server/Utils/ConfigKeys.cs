@@ -24,9 +24,11 @@ namespace WordGameServer.Utils
     {
         public const string ServerIP = "ServerIP";
         public const string ServerPort = "ServerPort";
-        public const string GameDataDirectory = "GameDataDirectory";
+        public const string GameDataFile = "GameDataFile";
         public const string GameDurationSeconds = "GameDurationSeconds";
         public const string BasePointsPerWord = "BasePointsPerWord";
         public const string TimeBonusMultiplier = "TimeBonusMultiplier";
+        public const string MaxGuesses = "MaxGuesses";
+        public const string WrongGuessPenalty = "WrongGuessPenalty";
     }
 }
