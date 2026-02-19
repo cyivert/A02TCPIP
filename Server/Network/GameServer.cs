@@ -90,7 +90,7 @@ namespace WordGameServer.Network
                     }
                     catch
                     {
-                        // Ignore errors during forced stop
+                        this.logger.LogError("Error stopping listener during cancellation");
                     }
                 });
 

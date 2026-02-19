@@ -123,9 +123,10 @@ namespace WordGameServer
 
                 if (server != null)
                 {
-                    await server.StopAsync();
+                    await server.StopAsync();       // stops the server and waits for all client tasks to complete before proceeding with cleanup
                 }
 
+                // signal the logger to flush and complete any pending log entries before disposing
                 logger?.Dispose();
                 cancellationTokenSource?.Dispose();
             }
