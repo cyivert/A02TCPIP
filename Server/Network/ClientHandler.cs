@@ -50,14 +50,14 @@ namespace WordGameServer.Network
         //
         public ClientHandler(TcpClient client, Logger logger)
         {
-            this.client = client;
-            this.logger = logger;
-            this.stream = null;
-            this.reader = null;
-            this.writer = null;
-            this.currentGame = null;
-            this.playerName = "Unknown";
-            this.playerEmail = "N/A";
+            this.client = client;           // Store the TcpClient instance for communication with the client
+            this.logger = logger;           // Store the Logger instance for logging purposes
+            this.stream = null;             // Initialize the NetworkStream to null; it will be set when the client connection is established
+            this.reader = null;             // Initialize the StreamReader to null; it will be set when the client connection is established
+            this.writer = null;             // Initialize the StreamWriter to null; it will be set when the client connection is established
+            this.currentGame = null;        // Initialize the current game session to null; it will be set when a game is started by the client
+            this.playerName = "Unknown";    // Default name until START command is received
+            this.playerEmail = "N/A";       // Default email until START command is received
 
             return;
         }
@@ -84,7 +84,8 @@ namespace WordGameServer.Network
                 // Initialize network stream and readers/writers
                 this.stream = this.client.GetStream();
                 this.reader = new StreamReader(this.stream, Encoding.UTF8);
-                this.writer = new StreamWriter(this.stream, Encoding.UTF8) { AutoFlush = true };
+                this.writer = new StreamWriter(this.stream, Encoding.UTF8) { AutoFlush = true }; // auto-flush after each write
+                                                                                                 // (means: it will automatically send the data to the client without needing to call Flush() explicitly)
 
                 // Send welcome message (handshake)
                 await this.SendResponseAsync(GameConstants.WelcomeMessage, cancellationToken);

@@ -6,6 +6,10 @@
 * TCP server with configurable IP binding and CancellationToken added for graceful shutdown. Manages active client tasks and logs important events and errors.
 */
 
+/* REFERNECE
+ Microsoft. (n/a). DataTime.UtcNow Property. https://learn.microsoft.com/en-us/dotnet/api/system.datetime.utcnow?view=net-10.0
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -105,6 +109,7 @@ namespace WordGameServer.Network
                 this.logger.LogError($"Socket error: {sockEx.Message}");
                 this.logger.LogError($"Error code: {sockEx.ErrorCode}");
 
+                // if specific socket errors occur, provide more detailed guidance
                 if (sockEx.ErrorCode == 10048) // Address already in use
                 {
                     this.logger.LogError($"Port {this.port} is already in use. Please choose a different port.");
@@ -162,8 +167,10 @@ namespace WordGameServer.Network
 
                     client = await acceptTask;
 
+                    // Increment active connections count and log the new connection
                     Interlocked.Increment(ref this.activeConnections);
 
+                    // Log client connection details
                     string clientEndpoint = client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
                     this.logger.LogMessage($"Client connected from {clientEndpoint}. Active connections: {this.activeConnections}");
 
@@ -226,8 +233,13 @@ namespace WordGameServer.Network
 
             try
             {
+                // initialize client endpoint for logging
                 clientEndpoint = client.Client.RemoteEndPoint?.ToString() ?? "Unknown";
+
+                // Create a ClientHandler instance to manage communication with this client
                 ClientHandler handler = new ClientHandler(client, this.logger);
+
+                // Process client communication asynchronously
                 await handler.ProcessClientAsync(cancellationToken);
             }
             catch (OperationCanceledException)
@@ -275,6 +287,15 @@ namespace WordGameServer.Network
             return;
         }
 
+        //
+        // FUNCTION: StopAsync
+        // DESCRIPTION:
+        // This function is responsible for gracefully stopping the server. It first logs that the server is stopping,
+        // then it stops accepting new connections by stopping the TcpListener.
+        // PARAMETERS: n/a
+        // RETURNS:
+        // Task - Represents the asynchronous operation of stopping the server
+        //
         public async Task StopAsync()
         {
             this.logger.LogMessage("Stopping server...");
@@ -287,6 +308,8 @@ namespace WordGameServer.Network
 
                 // Wait for active clients to finish (with timeout)
                 Task[]? clientTasksArray = null;
+
+                // lock the client tasks list to safely copy the active tasks to an array for waiting
                 lock (this.clientTasksLock)
                 {
                     clientTasksArray = this.activeClientTasks.ToArray();
@@ -296,11 +319,12 @@ namespace WordGameServer.Network
                 {
                     this.logger.LogMessage($"Waiting for {clientTasksArray.Length} active client(s) to disconnect...");
 
-                    Task allClientsTask = Task.WhenAll(clientTasksArray);
-                    Task timeoutTask = Task.Delay(5000); // 5 second timeout
+                    Task allClientsTask = Task.WhenAll(clientTasksArray);   // Task that completes when all client tasks have completed
+                    Task timeoutTask = Task.Delay(5000);                    // 5 second timeout
 
                     Task completedTask = await Task.WhenAny(allClientsTask, timeoutTask);
 
+                    // if the timeout task completed first, it means not all clients disconnected within the timeout period
                     if (completedTask == timeoutTask)
                     {
                         this.logger.LogWarning("Timeout waiting for clients. Forcing shutdown.");
@@ -319,7 +343,7 @@ namespace WordGameServer.Network
             }
             finally
             {
-                this.logger.SignalShutdown();
+                this.logger.SignalShutdown(); // Signal the logger to flush and stop any background logging tasks
             }
 
             return;

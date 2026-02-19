@@ -112,47 +112,52 @@ namespace WordGameServer.Game
             int parsedMaxGuesses = 0;
             int parsedPenalty = 0;
 
+            // Validate and set GameDurationSeconds
             if (int.TryParse(durationValue, out parsedDuration) && parsedDuration >= GameConstants.MinGameDuration)
             {
                 GameDurationSeconds = parsedDuration;
             }
-            else
+            else // Validate and set BasePointsPerWord
             {
                 GameDurationSeconds = GameConstants.DefaultGameDurationSeconds;
             }
 
+            // Validate and set BasePointsPerWord
             if (int.TryParse(basePointsValue, out parsedPoints) && parsedPoints >= GameConstants.MinPointsPerWord)
             {
                 BasePointsPerWord = parsedPoints;
             }
-            else
+            else // Validate and set TimeBonusMultiplier
             {
                 BasePointsPerWord = GameConstants.DefaultBasePointsPerWord;
             }
 
+            // Validate and set TimeBonusMultiplier
             if (int.TryParse(bonusMultiplierValue, out parsedMultiplier) && parsedMultiplier >= GameConstants.MinBonusMultiplier)
             {
                 TimeBonusMultiplier = parsedMultiplier;
             }
-            else
+            else // Validate and set MaxGuesses
             {
                 TimeBonusMultiplier = GameConstants.DefaultTimeBonusMultiplier;
             }
 
+            // Validate and set MaxGuesses
             if (int.TryParse(maxGuessesValue, out parsedMaxGuesses) && parsedMaxGuesses >= GameConstants.MinMaxGuesses)
             {
                 MaxGuesses = parsedMaxGuesses;
             }
-            else
+            else // Validate and set WrongGuessPenalty
             {
                 MaxGuesses = GameConstants.DefaultMaxGuesses;
             }
 
+            // Validate and set WrongGuessPenalty
             if (int.TryParse(penaltyValue, out parsedPenalty) && parsedPenalty >= GameConstants.MinWrongGuessPenalty)
             {
                 WrongGuessPenalty = parsedPenalty;
             }
-            else
+            else // Validate and set WrongGuessPenalty
             {
                 WrongGuessPenalty = GameConstants.DefaultWrongGuessPenalty;
             }
@@ -195,14 +200,17 @@ namespace WordGameServer.Game
             GuessResult result = GuessResult.NotFound;
             string normalizedWord = string.Empty;
 
+            // Lock the session to ensure thread-safe access to the game state while processing the guess
             lock (this.sessionLock)
             {
+                // First check if the game timer has expired before processing the guess. If the timer has expired, return TimeExpired without counting this guess.
                 if (this.gameTimer.IsExpired())
                 {
                     result = GuessResult.TimeExpired;
                     return result;
                 }
 
+                // Validate the input word. If the word is null, empty, or consists only of whitespace, count it as a guess but return NotFound.
                 if (string.IsNullOrWhiteSpace(word))
                 {
                     this.guessCount++;
@@ -212,12 +220,14 @@ namespace WordGameServer.Game
 
                 normalizedWord = word.Trim().ToUpper();
 
+                // Check if the normalized word has already been found in this game session. If it has, return AlreadyFound without counting this guess.
                 if (this.foundWords.Contains(normalizedWord))
                 {
                     result = GuessResult.AlreadyFound;
                     return result;
                 }
 
+                // Check if the normalized word is a valid word in the game data. If it is, add it to the foundWords set, increment the foundCount, and return Found.
                 if (this.gameData.IsValidWord(normalizedWord))
                 {
                     this.foundWords.Add(normalizedWord);
@@ -249,6 +259,15 @@ namespace WordGameServer.Game
             return isOver;
         }
 
+
+        //
+        // METHOD: IsGameComplete
+        // DESCRIPTION :
+        // This method checks if the game session has been completed by comparing
+        // the count of found words with the total word count defined in the GameData.
+        // PARAMETERS : n/a
+        // RETURNS : 
+        // isComplete - A boolean value indicating whether the game session is complete (true if the number of found words is greater than or equal to the total word count, false otherwise).
         public bool IsGameComplete()
         {
             bool isComplete = false;

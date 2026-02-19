@@ -66,11 +66,13 @@ namespace WordGameServer.Data
             int validCount = 0;
             string[]? matchingFiles = null;
             GameData? gameData = null;
-            
+
+            // Lock the loader to ensure thread safety while accessing the loadedGames list and performing file operations
             lock (loaderLock)
             {
-                loadedGames.Clear();
+                loadedGames.Clear();    // Clear any previously loaded games before loading new ones
 
+                // Search for files matching the configured pattern and handle potential exceptions during file access
                 try
                 {
                     matchingFiles = Directory.GetFiles(".", gameDataFilePattern);
@@ -82,6 +84,7 @@ namespace WordGameServer.Data
                     return validCount;
                 }
 
+                // Check if any matching files were found and log an error if none are found
                 if (matchingFiles.Length == 0)
                 {
                     logger.LogError($"No game data files found matching pattern: {gameDataFilePattern}");
@@ -89,14 +92,15 @@ namespace WordGameServer.Data
                     return validCount;
                 }
 
+                // Iterate through each matching file, attempt to load and validate it, and log the results
                 foreach (string filePath in matchingFiles)
                 {
                     try
                     {
-                        gameData = LoadAndValidateGameFile(filePath, logger);
-                        loadedGames.Add(gameData);
-                        validCount++;
-                        logger.LogMessage($"Loaded: {Path.GetFileName(filePath)}");
+                        gameData = LoadAndValidateGameFile(filePath, logger);           // Attempt to load and validate the game data file
+                        loadedGames.Add(gameData);                                      // If successful, add the GameData object to the loadedGames list and increment the valid count
+                        validCount++;                                                   // Log a message indicating that the file was successfully loaded
+                        logger.LogMessage($"Loaded: {Path.GetFileName(filePath)}");     // Log a message indicating that the file was successfully loaded
                     }
                     catch (Exception ex)
                     {
@@ -119,9 +123,11 @@ namespace WordGameServer.Data
         //
         public static GameData LoadRandomGame()
         {
+            // Check if there are any loaded games and select one at random
             GameData? selectedGame = null;
             int randomIndex = 0;
-            
+
+            // Lock the loader to ensure thread safety while accessing the loadedGames list
             lock (loaderLock)
             {
                 if (loadedGames.Count == 0)
@@ -129,6 +135,7 @@ namespace WordGameServer.Data
                     throw new InvalidOperationException("No games loaded");
                 }
 
+                // Generate a random index to select a game from the loadedGames list
                 randomIndex = random.Next(loadedGames.Count);
                 selectedGame = loadedGames[randomIndex];
             }
@@ -158,6 +165,7 @@ namespace WordGameServer.Data
             List<string>? words = null;
             int actualWordCount = 0;
 
+            // Read all lines from the file and handle potential IO exceptions
             try
             {
                 fileLines = File.ReadAllLines(filePath);
@@ -167,27 +175,32 @@ namespace WordGameServer.Data
                 throw new InvalidDataException($"Cannot read file: {ioEx.Message}");
             }
 
+            // Validate that the file has the minimum required number of lines (puzzle + word count + at least one word)
             if (fileLines == null || fileLines.Length < GameConstants.MinimumFileLines)
             {
                 throw new InvalidDataException($"File must contain at least {GameConstants.MinimumFileLines} lines");
             }
 
+            // Validate the puzzle string length
             puzzleString = fileLines[GameConstants.PuzzleLineIndex].Trim();
             if (puzzleString.Length != GameConstants.RequiredPuzzleLength)
             {
                 throw new InvalidDataException($"Puzzle string must be exactly {GameConstants.RequiredPuzzleLength} characters (found {puzzleString.Length})");
             }
 
+            // Validate the word count line and ensure it is a positive integer
             if (!int.TryParse(fileLines[GameConstants.WordCountLineIndex].Trim(), out wordCount))
             {
                 throw new InvalidDataException("Line 2 must contain a valid integer");
             }
 
+            // Validate that the word count is positive
             if (wordCount <= 0)
             {
                 throw new InvalidDataException($"Word count must be positive (found {wordCount})");
             }
 
+            // Validate that the file contains enough lines for the declared word count (puzzle + word count + words)
             words = new List<string>();
             for (int i = GameConstants.FirstWordLineIndex; i < fileLines.Length; i++)
             {
@@ -198,12 +211,14 @@ namespace WordGameServer.Data
                 }
             }
 
+            // Validate that the actual number of words matches the declared word count
             actualWordCount = words.Count;
             if (actualWordCount != wordCount)
             {
                 throw new InvalidDataException($"Word count mismatch: header says {wordCount}, found {actualWordCount} words");
             }
 
+            // Validate that each word exists in the puzzle string (either forward or backward)
             foreach (string word in words)
             {
                 if (!WordExistsInPuzzle(word, puzzleString))
@@ -236,16 +251,19 @@ namespace WordGameServer.Data
             string upperWord = string.Empty;
             string upperPuzzle = string.Empty;
             string reversedWord = string.Empty;
-            
+
+            // Convert both the word and the puzzle string to uppercase for case-insensitive comparison
             upperWord = word.ToUpper();
             upperPuzzle = puzzleString.ToUpper();
-            
+
+            // Check if the word exists in the puzzle string in its original form
             if (upperPuzzle.Contains(upperWord))
             {
                 exists = true;
                 return exists;
             }
 
+            // Check if the reversed word exists in the puzzle string
             reversedWord = new string(upperWord.Reverse().ToArray());
             if (upperPuzzle.Contains(reversedWord))
             {
